@@ -50,6 +50,7 @@ Thumbs.db
 /dist/
 *.log
 release_notes.md
+deps-graph.svg
 
 # Debug files
 debug
