@@ -1,5 +1,7 @@
 # 🚀 K8s Resource Analyzer API
 
+[🇺🇸 English Version](README.en.md)
+
 > API HTTP em Go para análise de recursos Kubernetes com foco em FinOps.
 
 <div align="center">
