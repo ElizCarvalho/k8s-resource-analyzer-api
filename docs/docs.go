@@ -37,7 +37,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PingResponse"
+                            "$ref": "#/definitions/response.Response"
                         }
                     }
                 }
@@ -45,20 +45,31 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.PingResponse": {
+        "response.Response": {
             "type": "object",
             "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "pong"
+                "data": {
+                    "description": "Dados da resposta (opcional)"
                 },
-                "status": {
-                    "type": "string",
-                    "example": "ok"
+                "error": {
+                    "description": "Mensagem de erro (opcional)",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "Mensagem descritiva",
+                    "type": "string"
+                },
+                "request_id": {
+                    "description": "ID único da requisição",
+                    "type": "string"
+                },
+                "success": {
+                    "description": "Indica se a requisição foi bem sucedida",
+                    "type": "boolean"
                 },
                 "timestamp": {
-                    "type": "string",
-                    "example": "2024-02-18T00:00:00Z"
+                    "description": "Timestamp da resposta",
+                    "type": "string"
                 }
             }
         }

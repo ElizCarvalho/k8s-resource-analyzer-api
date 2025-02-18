@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/api/middleware"
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/api/routes"
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/logger"
 
@@ -37,6 +38,9 @@ func main() {
 
 	// Inicializar router
 	r := gin.Default()
+
+	// Adiciona middleware de RequestID
+	r.Use(middleware.RequestID())
 
 	// Configurar rotas
 	routes.SetupRoutes(r)
