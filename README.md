@@ -58,50 +58,66 @@ O K8s Resource Analyzer é uma API desenvolvida em Go que permite analisar recur
 | 🚧 | **Integração Metrics** | Conexão com Prometheus/Mimir |
 | 🚧 | **Dashboard** | Visualização de métricas e custos |
 
-## 🛠️ Tecnologias
+## 🛠️ Stack Tecnológica
 
 <table>
   <tr>
     <td align="center">
-      <b>Core</b><br/>
+      <b>Core & API</b><br/>
       <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/go/go-original.svg" width="40" height="40"/><br/>
-      <a href="https://go.dev/"><b>Go 1.22+</b></a>
+      <a href="https://go.dev/"><b>Go 1.22+ & Gin</b></a>
       <p align="center">
         • Integração nativa com client-go<br/>
-        • Processamento eficiente de métricas<br/>
+        • Alta performance e baixa alocação<br/>
+        • Middleware robusto e flexível<br/>
         • Execução concorrente
       </p>
-    </td>
-    <td align="center">
-      <b>Framework</b><br/>
-      <img src="https://raw.githubusercontent.com/gin-gonic/logo/master/color.png" width="40" height="40"/><br/>
-      <a href="https://gin-gonic.com/"><b>Gin</b></a>
       <p align="center">
-        • Alta performance<br/>
-        • Cache otimizado<br/>
-        • Streaming em tempo real
+        <code>Framework web de alta performance</code>
       </p>
     </td>
     <td align="center">
-      <b>Monitoramento</b><br/>
+      <b>Observabilidade</b><br/>
       <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/prometheus/prometheus-original.svg" width="40" height="40"/><br/>
-      <a href="https://prometheus.io/"><b>Prometheus/Mimir</b></a>
+      <a href="https://grafana.com/oss/mimir/"><b>Mimir & Zerolog</b></a>
       <p align="center">
-        • Coleta de métricas<br/>
-        • Armazenamento de longo prazo<br/>
-        • Base extensível
+        • Métricas históricas K8s<br/>
+        • Logs estruturados em JSON<br/>
+        • Rastreamento por Request ID<br/>
+        • Zero alocação em logs
+      </p>
+      <p align="center">
+        <code>Monitoramento completo e eficiente</code>
+      </p>
+    </td>
+    <td align="center">
+      <b>Qualidade</b><br/>
+      <img src="https://raw.githubusercontent.com/golangci/golangci-lint/master/assets/go.png" width="40" height="40"/><br/>
+      <a href="https://golangci-lint.run/"><b>Ferramentas & Padrões</b></a>
+      <p align="center">
+        • Linting (golangci-lint)<br/>
+        • Formatação (goimports)<br/>
+        • Segurança (nancy)<br/>
+        • Automação (Make)
+      </p>
+      <p align="center">
+        <code>Garantia de qualidade de código</code>
       </p>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <b>Container</b><br/>
+      <b>Infraestrutura</b><br/>
       <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" width="40" height="40"/><br/>
-      <a href="https://www.docker.com/"><b>Docker</b></a>
+      <a href="https://www.docker.com/"><b>Container & CI/CD</b></a>
       <p align="center">
-        • Deploy consistente<br/>
-        • Isolamento seguro<br/>
-        • Recursos controlados
+        • Docker multi-stage build<br/>
+        • GitHub Actions Workflows<br/>
+        • Deploy automatizado<br/>
+        • Isolamento seguro
+      </p>
+      <p align="center">
+        <code>Pipeline e deploy consistentes</code>
       </p>
     </td>
     <td align="center">
@@ -111,35 +127,31 @@ O K8s Resource Analyzer é uma API desenvolvida em Go que permite analisar recur
       <p align="center">
         • Documentação interativa<br/>
         • Schemas bem definidos<br/>
-        • Exemplos práticos
+        • Exemplos práticos<br/>
+        • ADRs detalhadas
+      </p>
+      <p align="center">
+        <code>Documentação clara e atualizada</code>
       </p>
     </td>
     <td align="center">
-      <b>Logging</b><br/>
-      <img src="https://www.vectorlogo.zone/logos/splunk/splunk-icon.svg" width="40" height="40"/><br/>
-      <a href="https://github.com/rs/zerolog"><b>Zerolog</b></a>
+      <b>Ambiente</b><br/>
+      <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/kubernetes/kubernetes-plain.svg" width="40" height="40"/><br/>
+      <a href="https://kubernetes.io/"><b>Kubernetes & Cloud</b></a>
       <p align="center">
-        • Zero alocação de memória<br/>
-        • Logs estruturados em JSON<br/>
-        • Alta performance
+        • Análise de recursos K8s<br/>
+        • Métricas de custos<br/>
+        • Insights FinOps<br/>
+        • Otimização de recursos
       </p>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" colspan="3">
-      <b>Qualidade</b><br/>
-      <img src="https://raw.githubusercontent.com/golangci/golangci-lint/master/assets/go.png" width="40" height="40"/><br/>
-      <a href="https://golangci-lint.run/"><b>Ferramentas</b></a>
       <p align="center">
-        • Linting (golangci-lint)<br/>
-        • Segurança (nancy)<br/>
-        • Automação (Make)
+        <code>Foco em eficiência e custos</code>
       </p>
     </td>
   </tr>
 </table>
 
-> **Nota**: Todas as tecnologias foram escolhidas considerando as necessidades específicas de análise de recursos Kubernetes e FinOps. Para mais detalhes sobre cada tecnologia, consulte a documentação oficial.
+> **Nota**: Cada tecnologia foi escolhida considerando as necessidades específicas de análise de recursos Kubernetes e FinOps, priorizando performance, observabilidade e manutenibilidade.
 
 ## 📦 Estrutura do Projeto
 
