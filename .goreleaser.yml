@@ -25,7 +25,11 @@ dockers:
       - "ecarvalho2020/k8s-resource-analyzer-api:{{ .Version }}"
       - "ecarvalho2020/k8s-resource-analyzer-api:latest"
     use: docker
-    dockerfile: ./Dockerfile
+    dockerfile: Dockerfile
+    extra_files:
+      - go.mod
+      - go.sum
+      - .env.example
     build_flag_templates:
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
