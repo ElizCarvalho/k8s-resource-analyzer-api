@@ -100,8 +100,15 @@ setup: welcome ## Configura ambiente básico
 	fi
 	@$(MAKE) check-deps
 	@$(MAKE) deps
+	@$(MAKE) install-hooks
 	@echo -e "✅ $(GREEN)Ambiente básico configurado!$(NC)"
 	@echo -e "\n$(YELLOW)💡 Para uma configuração completa, execute:$(NC) make setup-dev"
+
+install-hooks: ## Instala os git hooks
+	@echo -e "🔧 $(BLUE)Instalando git hooks...$(NC)"
+	@cp -f scripts/git-hooks/* .git/hooks/
+	@chmod +x .git/hooks/*
+	@echo -e "✅ $(GREEN)Git hooks instalados!$(NC)"
 
 check-deps: ## Verifica e instala dependências de desenvolvimento
 	@echo -e "🔍 $(BLUE)Verificando dependências de desenvolvimento...$(NC)"

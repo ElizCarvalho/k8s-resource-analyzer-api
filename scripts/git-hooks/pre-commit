@@ -1,0 +1,27 @@
+#!/bin/bash
+set -e  # Falha se qualquer comando falhar
+
+echo "🔍 Executando verificações pre-commit..."
+
+# Verifica formatação
+echo "Verificando formatação..."
+make format || {
+    echo "❌ Erro na formatação"
+    exit 1
+}
+
+# Executa linter
+echo "Executando linter..."
+make lint || {
+    echo "❌ Erro no linter"
+    exit 1
+}
+
+# Executa testes
+echo "Executando testes..."
+make test || {
+    echo "❌ Erro nos testes"
+    exit 1
+}
+
+echo "✅ Todas as verificações passaram!"
