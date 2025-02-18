@@ -83,7 +83,7 @@ VERSION_INFO="$(VERSION_TAG) ($(COMMIT_SHA)) - Built on $(BUILD_TIME)"
 # ==============================================================================
 # Configuração do Make
 # ==============================================================================
-.PHONY: all build clean test coverage deps run docker-build docker-run docker-push swagger help colors welcome setup format lint debug debug-docker check-deps validate ci cd env-check env-setup security metrics health backup snapshot monitor install-tools analyze version tag release release-docker ci-check cd-check clean-all docs
+.PHONY: all build clean test coverage deps run docker-build docker-run docker-push swagger help colors welcome setup format lint debug debug-docker check-deps validate ci cd env-check env-setup security metrics health backup snapshot monitor install-tools analyze version tag release release-docker ci-check cd-check clean-all docs deps-check
 .DEFAULT_GOAL := help
 
 # ==============================================================================
@@ -392,4 +392,9 @@ docs: swagger ## Gera toda a documentação
 	else \
 		echo -e "$(RED)❌ Erro ao gerar Swagger$(NC)"; \
 		exit 1; \
-	fi 
+	fi
+
+deps-check: ## Verifica dependências desatualizadas e vulnerabilidades
+	@echo -e "🔍 $(BLUE)Verificando dependências...$(NC)"
+	@chmod +x ./scripts/check-deps.sh
+	@./scripts/check-deps.sh 
