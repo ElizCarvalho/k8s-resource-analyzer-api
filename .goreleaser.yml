@@ -22,8 +22,8 @@ builds:
 
 dockers:
   - image_templates:
-      - "ecarvalho2020/k8s-resource-analyzer-api:{{ .Version }}"
-      - "ecarvalho2020/k8s-resource-analyzer-api:latest"
+      - "eliscarvalho/k8s-resource-analyzer-api:{{ .Version }}"
+      - "eliscarvalho/k8s-resource-analyzer-api:latest"
     use: docker
     dockerfile: Dockerfile
     extra_files:
