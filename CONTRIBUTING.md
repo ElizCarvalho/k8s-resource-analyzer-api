@@ -1,5 +1,7 @@
 # Contribuindo com o K8s Resource Analyzer
 
+[🇺🇸 English Version](CONTRIBUTING.en.md)
+
 ## Índice
 1. [Como Contribuir](#como-contribuir)
 2. [Processo de Desenvolvimento](#processo-de-desenvolvimento)
