@@ -1,10 +1,10 @@
 package main
 
 import (
-	"log"
 	"os"
 
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/api/routes"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -28,6 +28,10 @@ import (
 // @tag.description Endpoints para monitoramento da saúde da API
 
 func main() {
+	// Inicializa o logger
+	logger.Setup()
+	log := logger.Logger
+
 	// Configurar modo de execução
 	gin.SetMode(getEnv("GIN_MODE", "debug"))
 
@@ -44,10 +48,18 @@ func main() {
 
 	// Iniciar servidor
 	port := getEnv("PORT", "9000")
-	log.Printf("🚀 Servidor iniciando na porta %s...", port)
-	log.Printf("📚 Documentação Swagger disponível em http://localhost:%s/swagger/index.html", port)
+	log.Info().
+		Str("port", port).
+		Msg("🚀 Servidor iniciando...")
+
+	log.Info().
+		Str("url", "http://localhost:"+port+"/swagger/index.html").
+		Msg("📚 Documentação Swagger disponível")
+
 	if err := r.Run(":" + port); err != nil {
-		log.Fatal("Erro ao iniciar servidor:", err)
+		log.Fatal().
+			Err(err).
+			Msg("Erro ao iniciar servidor")
 	}
 }
 

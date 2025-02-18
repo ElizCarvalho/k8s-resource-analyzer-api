@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 	"time"
 
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,7 +23,14 @@ type PingResponse struct {
 // @Router /ping [get]
 func PingHandler(c *gin.Context) {
 	timestamp := time.Now()
-	log.Printf("Recebida requisição ping em: %v", timestamp)
+
+	logger.Info().
+		Time("timestamp", timestamp).
+		Str("handler", "ping").
+		Str("method", "GET").
+		Str("path", "/ping").
+		Str("ip", c.ClientIP()).
+		Msg("Recebida requisição ping")
 
 	response := PingResponse{
 		Message:   "pong",
