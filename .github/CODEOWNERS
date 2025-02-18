@@ -1,0 +1,7 @@
+# Proteção global - requer aprovação dos mantenedores
+* @ElizCarvalho
+
+# Arquivos críticos que requerem atenção especial
+/.github/ @ElizCarvalho
+go.mod @ElizCarvalho
+go.sum @ElizCarvalho 
