@@ -125,6 +125,18 @@ K8s Resource Analyzer is a Go API designed to analyze Kubernetes resources with 
       </p>
     </td>
   </tr>
+  <tr>
+    <td align="center" colspan="3">
+      <b>Quality</b><br/>
+      <img src="https://raw.githubusercontent.com/golangci/golangci-lint/master/assets/go.png" width="40" height="40"/><br/>
+      <a href="https://golangci-lint.run/"><b>Tools</b></a>
+      <p align="center">
+        • Linting (golangci-lint)<br/>
+        • Security (nancy)<br/>
+        • Automation (Make)
+      </p>
+    </td>
+  </tr>
 </table>
 
 > **Note**: All technologies were chosen considering the specific needs of Kubernetes resource analysis and FinOps. For more details about each technology, check their official documentation.
@@ -233,17 +245,17 @@ Complete documentation available at `/swagger/index.html`
 
 ### Build
 ```bash
-docker build -t ecarvalho2020/k8s-resource-analyzer-api:latest .
+docker build -t eliscarvalho/k8s-resource-analyzer-api:latest .
 ```
 
 ### Run
 ```bash
-docker run -p 9000:9000 ecarvalho2020/k8s-resource-analyzer-api:latest
+docker run -p 9000:9000 eliscarvalho/k8s-resource-analyzer-api:latest
 ```
 
 ### Docker Hub
 ```bash
-docker pull ecarvalho2020/k8s-resource-analyzer-api:latest
+docker pull eliscarvalho/k8s-resource-analyzer-api:latest
 ```
 
 ## 🧪 Tests
