@@ -1,0 +1,64 @@
+package main
+
+import (
+	"log"
+	"os"
+
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/api/routes"
+
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "github.com/ElizCarvalho/k8s-resource-analyzer-api/docs" // Importa os docs gerados pelo Swagger
+)
+
+// @title K8s Resource Analyzer API
+// @version 1.0
+// @description API para análise e otimização de recursos Kubernetes com foco em FinOps. Fornece métricas de utilização, recomendações de custos e análise de eficiência dos recursos em clusters Kubernetes.
+// @host localhost:9000
+// @BasePath /api/v1
+// @schemes http https
+// @contact.name Elizabeth Carvalho
+// @contact.url https://github.com/ElizCarvalho/k8s-resource-analyzer-api
+// @contact.email elizabethcarvalh0@yahoo.com
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+// @tag.name health
+// @tag.description Endpoints para monitoramento da saúde da API
+// @tag.name resources
+// @tag.description Endpoints para análise de recursos Kubernetes
+// @tag.name costs
+// @tag.description Endpoints para análise de custos e recomendações FinOps
+
+func main() {
+	// Configurar modo de execução
+	gin.SetMode(getEnv("GIN_MODE", "debug"))
+
+	// Inicializar router
+	r := gin.Default()
+
+	// Configurar rotas
+	routes.SetupRoutes(r)
+
+	// Configurar Swagger
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
+		ginSwagger.URL("http://localhost:9000/swagger/doc.json"),
+		ginSwagger.DefaultModelsExpandDepth(-1)))
+
+	// Iniciar servidor
+	port := getEnv("PORT", "9000")
+	log.Printf("🚀 Servidor iniciando na porta %s...", port)
+	log.Printf("📚 Documentação Swagger disponível em http://localhost:%s/swagger/index.html", port)
+	if err := r.Run(":" + port); err != nil {
+		log.Fatal("Erro ao iniciar servidor:", err)
+	}
+}
+
+// Utilitário para obter variáveis de ambiente
+func getEnv(key, fallback string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return fallback
+}
