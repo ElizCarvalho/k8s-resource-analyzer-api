@@ -30,6 +30,9 @@ dockers:
       - go.mod
       - go.sum
       - .env.example
+      - cmd/**/*
+      - internal/**/*
+      - docs/**/*
     build_flag_templates:
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
