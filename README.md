@@ -153,8 +153,6 @@ k8s-resource-analyzer-api/
 └── README.md         # Documentação principal
 ```
 
-# Teste do pre-commit
-
 ## 🤝 Contribuindo
 
 1. Fork o projeto
