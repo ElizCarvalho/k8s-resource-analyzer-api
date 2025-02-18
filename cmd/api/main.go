@@ -63,7 +63,7 @@ func main() {
 	if err := r.Run(":" + port); err != nil {
 		log.Fatal().
 			Err(err).
-			Msg("Erro ao iniciar servidor")
+			Msg("❌ Erro ao iniciar servidor")
 	}
 }
 
