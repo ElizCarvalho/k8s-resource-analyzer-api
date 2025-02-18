@@ -4,4 +4,4 @@
 # Arquivos críticos que requerem atenção especial
 /.github/ @ElizCarvalho
 go.mod @ElizCarvalho
-go.sum @ElizCarvalho 
+go.sum @ElizCarvalho
