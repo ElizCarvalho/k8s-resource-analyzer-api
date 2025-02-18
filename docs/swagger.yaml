@@ -1,0 +1,53 @@
+basePath: /api/v1
+definitions:
+  handlers.PingResponse:
+    properties:
+      message:
+        example: pong
+        type: string
+      status:
+        example: ok
+        type: string
+      timestamp:
+        example: "2024-02-18T00:00:00Z"
+        type: string
+    type: object
+host: localhost:9000
+info:
+  contact:
+    email: elizabethcarvalh0@yahoo.com
+    name: Elizabeth Carvalho
+    url: https://github.com/ElizCarvalho/k8s-resource-analyzer-api
+  description: API para análise e otimização de recursos Kubernetes com foco em FinOps.
+    Fornece métricas de utilização, recomendações de custos e análise de eficiência
+    dos recursos em clusters Kubernetes.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: K8s Resource Analyzer API
+  version: "1.0"
+paths:
+  /ping:
+    get:
+      description: Retorna pong se a API estiver funcionando
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PingResponse'
+      summary: Endpoint de health check
+      tags:
+      - health
+schemes:
+- http
+- https
+swagger: "2.0"
+tags:
+- description: Endpoints para monitoramento da saúde da API
+  name: health
+- description: Endpoints para análise de recursos Kubernetes
+  name: resources
+- description: Endpoints para análise de custos e recomendações FinOps
+  name: costs

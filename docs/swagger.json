@@ -1,0 +1,78 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "API para análise e otimização de recursos Kubernetes com foco em FinOps. Fornece métricas de utilização, recomendações de custos e análise de eficiência dos recursos em clusters Kubernetes.",
+        "title": "K8s Resource Analyzer API",
+        "contact": {
+            "name": "Elizabeth Carvalho",
+            "url": "https://github.com/ElizCarvalho/k8s-resource-analyzer-api",
+            "email": "elizabethcarvalh0@yahoo.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:9000",
+    "basePath": "/api/v1",
+    "paths": {
+        "/ping": {
+            "get": {
+                "description": "Retorna pong se a API estiver funcionando",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Endpoint de health check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PingResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handlers.PingResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "pong"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ok"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2024-02-18T00:00:00Z"
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "description": "Endpoints para monitoramento da saúde da API",
+            "name": "health"
+        },
+        {
+            "description": "Endpoints para análise de recursos Kubernetes",
+            "name": "resources"
+        },
+        {
+            "description": "Endpoints para análise de custos e recomendações FinOps",
+            "name": "costs"
+        }
+    ]
+}
