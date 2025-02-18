@@ -10,12 +10,12 @@ k8s-resource-analyzer-api
 # Test binary, built with `go test -c`
 *.test
 
-# Output of the go coverage tool, specifically when used with LiteIDE
+# Output of the go coverage tool
 *.out
 coverage.html
 coverage.txt
 
-# Dependency directories (remove the comment below to include it)
+# Dependency directories
 vendor/
 
 # Go workspace file
@@ -27,32 +27,28 @@ go.work.sum
 .vscode
 *.swp
 *.swo
-*.iml
-.project
-.settings
-.classpath
 
 # Environment files
 .env
 .env.local
-.env.*.local
 
 # OS specific
 .DS_Store
 Thumbs.db
 *.tmp
-*~
 
 # Project specific
 /tmp/
 /logs/
-/backups/
 /dist/
 *.log
-release_notes.md
 deps-graph.svg
 
 # Debug files
 debug
 debug.test
-__debug_bin 
+__debug_bin
+
+# Go specific
+*.prof
+*.trace 
