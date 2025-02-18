@@ -90,8 +90,8 @@ VERSION_INFO="$(VERSION_TAG) ($(COMMIT_SHA)) - Built on $(BUILD_TIME)"
 # Comandos de Desenvolvimento
 # ==============================================================================
 setup-dev: ## Configura ambiente de desenvolvimento completo
-	@chmod +x ./scripts/setup-dev.sh
-	@./scripts/setup-dev.sh
+	@chmod +x ./scripts/dev/setup-dev.sh
+	@./scripts/dev/setup-dev.sh
 
 setup: welcome ## Configura ambiente básico
 	@echo -e "🔧 $(BLUE)Configurando ambiente básico...$(NC)"
@@ -106,7 +106,7 @@ setup: welcome ## Configura ambiente básico
 
 install-hooks: ## Instala os git hooks
 	@echo -e "🔧 $(BLUE)Instalando git hooks...$(NC)"
-	@cp -f scripts/git-hooks/* .git/hooks/
+	@cp -f scripts/git/hooks/* .git/hooks/
 	@chmod +x .git/hooks/*
 	@echo -e "✅ $(GREEN)Git hooks instalados!$(NC)"
 
@@ -315,12 +315,12 @@ snapshot: ## Snapshot do estado atual
 # Comandos de Monitoramento
 # ==============================================================================
 monitor: ## Inicia o monitoramento interativo
-	@chmod +x ./scripts/monitor.sh
-	@./scripts/monitor.sh
+	@chmod +x ./scripts/ops/monitor.sh
+	@./scripts/ops/monitor.sh
 
 install-tools: ## Instala todas as ferramentas de desenvolvimento
-	@chmod +x ./scripts/install-tools.sh
-	@./scripts/install-tools.sh
+	@chmod +x ./scripts/dev/install-tools.sh
+	@./scripts/dev/install-tools.sh
 
 # ==============================================================================
 # Comandos de Análise
@@ -353,8 +353,8 @@ tag: ## Cria uma nova tag de versão
 # Comandos de Release
 # ==============================================================================
 release: ## Inicia o processo de release
-	@chmod +x ./scripts/release.sh
-	@./scripts/release.sh
+	@chmod +x ./scripts/ops/release.sh
+	@./scripts/ops/release.sh
 
 release-docker: ## Cria e publica uma nova versão Docker
 	@echo -e "🐳 $(BLUE)Iniciando release Docker...$(NC)"
@@ -403,5 +403,5 @@ docs: swagger ## Gera toda a documentação
 
 deps-check: ## Verifica dependências desatualizadas e vulnerabilidades
 	@echo -e "🔍 $(BLUE)Verificando dependências...$(NC)"
-	@chmod +x ./scripts/check-deps.sh
-	@./scripts/check-deps.sh 
+	@chmod +x ./scripts/dev/check-deps.sh
+	@./scripts/dev/check-deps.sh 
