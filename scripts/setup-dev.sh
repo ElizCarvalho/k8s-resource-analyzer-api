@@ -9,7 +9,7 @@ NC='\033[0m'
 
 # Variáveis
 APP_NAME="k8s-resource-analyzer-api"
-REQUIRED_GO_VERSION="1.21"
+REQUIRED_GO_VERSION="1.22"
 MIN_DOCKER_VERSION="20.10"
 
 # Função para verificar versão do Go
