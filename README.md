@@ -111,6 +111,18 @@ O K8s Resource Analyzer é uma API desenvolvida em Go que permite analisar recur
       </p>
     </td>
     <td align="center">
+      <b>Logging</b><br/>
+      <img src="https://www.vectorlogo.zone/logos/splunk/splunk-icon.svg" width="40" height="40"/><br/>
+      <a href="https://github.com/rs/zerolog"><b>Zerolog</b></a>
+      <p align="center">
+        • Zero alocação de memória<br/>
+        • Logs estruturados em JSON<br/>
+        • Alta performance
+      </p>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" colspan="3">
       <b>Qualidade</b><br/>
       <img src="https://raw.githubusercontent.com/golangci/golangci-lint/master/assets/go.png" width="40" height="40"/><br/>
       <a href="https://golangci-lint.run/"><b>Ferramentas</b></a>
@@ -124,6 +136,41 @@ O K8s Resource Analyzer é uma API desenvolvida em Go que permite analisar recur
 </table>
 
 > **Nota**: Todas as tecnologias foram escolhidas considerando as necessidades específicas de análise de recursos Kubernetes e FinOps. Para mais detalhes sobre cada tecnologia, consulte a documentação oficial.
+
+## 📦 Estrutura do Projeto
+
+```
+k8s-resource-analyzer-api/
+├── cmd/                    # Binários da aplicação
+│   └── api/               # Ponto de entrada da API HTTP
+├── internal/              # Código privado não exportável
+│   ├── api/              # Implementação dos endpoints
+│   └── pkg/              # Pacotes compartilhados
+├── docs/                 # Documentação OpenAPI/Swagger
+├── .env.example         # Template de configuração
+├── Dockerfile          # Instruções de containerização
+├── Makefile           # Automação de tarefas
+└── README.md         # Documentação principal
+```
+
+## 🤝 Contribuindo
+
+1. Fork o projeto
+2. Crie sua branch de feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add: nova funcionalidade'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+## 👩‍💻 Autora
+
+Feito com ❤️ por Elizabeth Carvalho
+
+[![LinkedIn](https://img.shields.io/badge/-Elizabeth%20Carvalho-blue?style=flat-square&logo=linkedin&logoColor=white&link=https://br.linkedin.com/in/elizcarvalho)](https://br.linkedin.com/in/elizcarvalho)
+[![GitHub](https://img.shields.io/badge/-ElizCarvalho-gray?style=flat-square&logo=github&logoColor=white&link=https://github.com/ElizCarvalho)](https://github.com/ElizCarvalho)
 
 ## 📋 Pré-requisitos
 
@@ -197,6 +244,8 @@ make docker-run
 |-------------|-----------------------------|---------|-------------|
 | PORT        | Porta da API                | 9000    | Não         |
 | GIN_MODE    | Modo do Gin (debug/release) | debug   | Não         |
+| LOG_LEVEL   | Nível de log               | info    | Não         |
+| LOG_FORMAT  | Formato dos logs (json/text)| json    | Não         |
 
 ## 📚 API Endpoints
 
@@ -233,37 +282,3 @@ make test
 # Roda testes com cobertura
 make test-cover
 ```
-
-## 📦 Estrutura do Projeto
-
-```
-k8s-resource-analyzer-api/
-├── cmd/                    # Binários da aplicação
-│   └── api/               # Ponto de entrada da API HTTP
-├── internal/              # Código privado não exportável
-│   └── api/              # Implementação dos endpoints
-├── docs/                 # Documentação OpenAPI/Swagger
-├── .env.example         # Template de configuração
-├── Dockerfile          # Instruções de containerização
-├── Makefile           # Automação de tarefas
-└── README.md         # Documentação principal
-```
-
-## 🤝 Contribuindo
-
-1. Fork o projeto
-2. Crie sua branch de feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add: nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## 📝 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-## 👩‍💻 Autora
-
-Feito com ❤️ por Elizabeth Carvalho
-
-[![LinkedIn](https://img.shields.io/badge/-Elizabeth%20Carvalho-blue?style=flat-square&logo=linkedin&logoColor=white&link=https://br.linkedin.com/in/elizcarvalho)](https://br.linkedin.com/in/elizcarvalho)
-[![GitHub](https://img.shields.io/badge/-ElizCarvalho-gray?style=flat-square&logo=github&logoColor=white&link=https://github.com/ElizCarvalho)](https://github.com/ElizCarvalho) 
