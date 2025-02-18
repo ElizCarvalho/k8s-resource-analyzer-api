@@ -67,14 +67,6 @@ const docTemplate = `{
         {
             "description": "Endpoints para monitoramento da saúde da API",
             "name": "health"
-        },
-        {
-            "description": "Endpoints para análise de recursos Kubernetes",
-            "name": "resources"
-        },
-        {
-            "description": "Endpoints para análise de custos e recomendações FinOps",
-            "name": "costs"
         }
     ]
 }`

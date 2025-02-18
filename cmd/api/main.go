@@ -26,10 +26,6 @@ import (
 // @license.url https://opensource.org/licenses/MIT
 // @tag.name health
 // @tag.description Endpoints para monitoramento da saúde da API
-// @tag.name resources
-// @tag.description Endpoints para análise de recursos Kubernetes
-// @tag.name costs
-// @tag.description Endpoints para análise de custos e recomendações FinOps
 
 func main() {
 	// Configurar modo de execução
