@@ -1,6 +1,6 @@
 # 🚀 K8s Resource Analyzer API
 
-> API REST em Go para análise de recursos Kubernetes com foco em FinOps.
+> API HTTP em Go para análise de recursos Kubernetes com foco em FinOps.
 
 <div align="center">
 
@@ -11,10 +11,6 @@
 ![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)
 ![Status](https://img.shields.io/badge/Status-In%20Development-yellow?style=flat-square)
 
-</div>
-
-<hr>
-
 <p align="center">
   <a href="#-sobre">Sobre</a> •
   <a href="#-status-do-projeto">Status</a> •
@@ -24,44 +20,146 @@
   <a href="#-api-endpoints">API</a>
 </p>
 
+</div>
+
 <hr>
 
 ## 📌 Sobre
+
+<div align="center">
+
+```mermaid
+graph LR
+    A[Kubernetes Cluster] --> B[Resource Analyzer]
+    B --> C[Métricas & Custos]
+    C --> D[Insights FinOps]
+    style A fill:#326CE5,stroke:#fff,stroke-width:2px,color:#fff
+    style B fill:#00ADD8,stroke:#fff,stroke-width:2px,color:#fff
+    style C fill:#85EA2D,stroke:#fff,stroke-width:2px,color:#fff
+    style D fill:#2496ED,stroke:#fff,stroke-width:2px,color:#fff
+```
+
+</div>
 
 O K8s Resource Analyzer é uma API desenvolvida em Go que permite analisar recursos do Kubernetes com foco em FinOps. A ferramenta fornece insights valiosos sobre utilização de recursos e custos em clusters Kubernetes.
 
 ## ⚡ Status do Projeto
 
-🚧 **Em Desenvolvimento** 🚧
-
-- [x] Configuração inicial do projeto
-- [x] Implementação do health check
-- [x] Documentação Swagger
-- [ ] Análise de recursos Kubernetes
-- [ ] Integração com Prometheus/Mimir
-- [ ] Dashboard de métricas
-
-## 🎯 Funcionalidades
-
-- Documentação Swagger interativa
-- Endpoints RESTful
-- Health Check e monitoramento
-- Suporte a múltiplos ambientes via variáveis de ambiente
+| Status | Funcionalidade | Descrição |
+|--------|----------------|-----------|
+| ✅ | **Configuração Inicial** | Estrutura base do projeto implementada |
+| ✅ | **Health Check** | Endpoint de verificação de saúde da API |
+| ✅ | **Documentação** | OpenAPI/Swagger implementado |
+| 🚧 | **Análise de Recursos** | Coleta e análise de recursos K8s |
+| 🚧 | **Integração Metrics** | Conexão com Prometheus/Mimir |
+| 🚧 | **Dashboard** | Visualização de métricas e custos |
 
 ## 🛠️ Tecnologias
 
-- [Go 1.22+](https://go.dev/) - Linguagem de programação
-- [Gin](https://gin-gonic.com/) - Web Framework
-- [Swagger](https://swagger.io/) - Documentação API
-- [Docker](https://www.docker.com/) - Containerização
+<table>
+  <tr>
+    <td align="center">
+      <b>Core</b><br/>
+      <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/go/go-original.svg" width="40" height="40"/><br/>
+      <a href="https://go.dev/"><b>Go 1.22+</b></a>
+      <p align="center">
+        • Integração nativa com client-go<br/>
+        • Processamento eficiente de métricas<br/>
+        • Execução concorrente
+      </p>
+    </td>
+    <td align="center">
+      <b>Framework</b><br/>
+      <img src="https://raw.githubusercontent.com/gin-gonic/logo/master/color.png" width="40" height="40"/><br/>
+      <a href="https://gin-gonic.com/"><b>Gin</b></a>
+      <p align="center">
+        • Alta performance<br/>
+        • Cache otimizado<br/>
+        • Streaming em tempo real
+      </p>
+    </td>
+    <td align="center">
+      <b>Monitoramento</b><br/>
+      <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/prometheus/prometheus-original.svg" width="40" height="40"/><br/>
+      <a href="https://prometheus.io/"><b>Prometheus/Mimir</b></a>
+      <p align="center">
+        • Coleta de métricas<br/>
+        • Armazenamento de longo prazo<br/>
+        • Base extensível
+      </p>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <b>Container</b><br/>
+      <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" width="40" height="40"/><br/>
+      <a href="https://www.docker.com/"><b>Docker</b></a>
+      <p align="center">
+        • Deploy consistente<br/>
+        • Isolamento seguro<br/>
+        • Recursos controlados
+      </p>
+    </td>
+    <td align="center">
+      <b>Documentação</b><br/>
+      <img src="https://raw.githubusercontent.com/swagger-api/swagger.io/wordpress/images/assets/SW-logo-clr.png" width="40" height="40"/><br/>
+      <a href="https://swagger.io/"><b>OpenAPI/Swagger</b></a>
+      <p align="center">
+        • Documentação interativa<br/>
+        • Schemas bem definidos<br/>
+        • Exemplos práticos
+      </p>
+    </td>
+    <td align="center">
+      <b>Qualidade</b><br/>
+      <img src="https://raw.githubusercontent.com/golangci/golangci-lint/master/assets/go.png" width="40" height="40"/><br/>
+      <a href="https://golangci-lint.run/"><b>Ferramentas</b></a>
+      <p align="center">
+        • Linting (golangci-lint)<br/>
+        • Segurança (nancy)<br/>
+        • Automação (Make)
+      </p>
+    </td>
+  </tr>
+</table>
+
+> **Nota**: Todas as tecnologias foram escolhidas considerando as necessidades específicas de análise de recursos Kubernetes e FinOps. Para mais detalhes sobre cada tecnologia, consulte a documentação oficial.
 
 ## 📋 Pré-requisitos
 
-- Go 1.22 ou superior
-- Docker
-- Make (opcional, para comandos de desenvolvimento)
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/go/go-original.svg" width="40" height="40"/><br/>
+      <b>Go 1.22+</b>
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg" width="40" height="40"/><br/>
+      <b>Docker</b>
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/kubernetes/kubernetes-plain.svg" width="40" height="40"/><br/>
+      <b>Kubernetes</b>
+    </td>
+    <td align="center">
+      <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/prometheus/prometheus-original.svg" width="40" height="40"/><br/>
+      <b>Prometheus</b>
+    </td>
+  </tr>
+</table>
 
 ## 🚀 Início Rápido
+
+```mermaid
+graph LR
+    A[Clone] --> B[Setup]
+    B --> C[Configure]
+    C --> D[Execute]
+    style A fill:#00ADD8,stroke:#fff,stroke-width:2px,color:#fff
+    style B fill:#2496ED,stroke:#fff,stroke-width:2px,color:#fff
+    style C fill:#85EA2D,stroke:#fff,stroke-width:2px,color:#fff
+    style D fill:#326CE5,stroke:#fff,stroke-width:2px,color:#fff
+```
 
 1. **Clone o repositório:**
 ```bash
@@ -140,15 +238,15 @@ make test-cover
 
 ```
 k8s-resource-analyzer-api/
-├── cmd/                    # Ponto de entrada da aplicação
-│   └── api/               # Arquivo main.go e configurações
-├── internal/              # Código privado da aplicação
-│   └── api/              # Handlers e rotas da API
-├── docs/                 # Documentação (Swagger)
-├── .env.example         # Exemplo de variáveis de ambiente
-├── Dockerfile          # Configuração Docker
-├── Makefile           # Comandos de desenvolvimento
-└── README.md         # Este arquivo
+├── cmd/                    # Binários da aplicação
+│   └── api/               # Ponto de entrada da API HTTP
+├── internal/              # Código privado não exportável
+│   └── api/              # Implementação dos endpoints
+├── docs/                 # Documentação OpenAPI/Swagger
+├── .env.example         # Template de configuração
+├── Dockerfile          # Instruções de containerização
+├── Makefile           # Automação de tarefas
+└── README.md         # Documentação principal
 ```
 
 ## 🤝 Contribuindo
