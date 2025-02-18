@@ -12,6 +12,8 @@
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker)
 ![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)
 ![Status](https://img.shields.io/badge/Status-In%20Development-yellow?style=flat-square)
+[![CI](https://github.com/ElizCarvalho/k8s-resource-analyzer-api/actions/workflows/ci.yml/badge.svg)](https://github.com/ElizCarvalho/k8s-resource-analyzer-api/actions/workflows/ci.yml)
+[![Release](https://github.com/ElizCarvalho/k8s-resource-analyzer-api/actions/workflows/release.yml/badge.svg)](https://github.com/ElizCarvalho/k8s-resource-analyzer-api/actions/workflows/release.yml)
 
 <p align="center">
   <a href="#-about">About</a> •
