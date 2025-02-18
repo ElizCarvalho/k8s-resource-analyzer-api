@@ -264,17 +264,17 @@ Documentação completa disponível em `/swagger/index.html`
 
 ### Build
 ```bash
-docker build -t ecarvalho2020/k8s-resource-analyzer-api:latest .
+docker build -t eliscarvalho/k8s-resource-analyzer-api:latest .
 ```
 
 ### Run
 ```bash
-docker run -p 9000:9000 ecarvalho2020/k8s-resource-analyzer-api:latest
+docker run -p 9000:9000 eliscarvalho/k8s-resource-analyzer-api:latest
 ```
 
 ### Docker Hub
 ```bash
-docker pull ecarvalho2020/k8s-resource-analyzer-api:latest
+docker pull eliscarvalho/k8s-resource-analyzer-api:latest
 ```
 
 ## 🧪 Testes
