@@ -287,7 +287,7 @@ metrics: ## Mostra métricas básicas
 	@echo -e "- Linhas de código Go: $$(find . -name '*.go' -not -path './vendor/*' | xargs wc -l | tail -n 1 | awk '{print $$1}')"
 	@echo -e "- Número de arquivos Go: $$(find . -name '*.go' -not -path './vendor/*' | wc -l)"
 	@echo -e "- Tamanho do binário: $$(ls -lh $(APP_NAME) 2>/dev/null | awk '{print $$5}' || echo 'N/A')"
-	@echo -e "- Versão: $(VERSION_INFO)"
+	@echo -e "- Versão: $(shell git describe --tags --abbrev=0 2>/dev/null || echo 'v0.1.0') ($(shell git rev-parse --short HEAD)) - Built on $(shell date -u '+%Y-%m-%d_%H:%M:%S')"
 
 health: ## Verifica saúde da aplicação
 	@echo -e "🏥 $(BLUE)Verificando saúde da aplicação...$(NC)"
