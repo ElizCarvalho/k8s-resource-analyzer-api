@@ -1,9 +1,7 @@
 package k8s_test
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -16,11 +14,8 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/metrics/pkg/client/clientset/versioned"
@@ -131,7 +126,11 @@ func TestGetDeploymentMetrics(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to start k3s: %v", err)
 	}
-	defer k3sContainer.Terminate(ctx)
+	defer func() {
+		if err := k3sContainer.Terminate(ctx); err != nil {
+			t.Fatalf("failed to terminate k3s container: %v", err)
+		}
+	}()
 
 	// Obter o endereço do servidor
 	endpoint, err := k3sContainer.Endpoint(ctx, "")
@@ -243,72 +242,6 @@ func TestGetDeploymentMetrics(t *testing.T) {
 		}
 		t.Logf("Pod %s: CPU=%s, Memory=%s", pod.Name, pod.CPU, pod.Memory)
 	}
-}
-
-// applyManifest aplica um manifesto YAML no cluster
-func applyManifest(ctx context.Context, clientset *kubernetes.Clientset, manifest []byte) error {
-	decoder := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(manifest), 4096)
-	for {
-		var obj runtime.Object
-		var raw map[string]interface{}
-		if err := decoder.Decode(&raw); err != nil {
-			if err == io.EOF {
-				break
-			}
-			return fmt.Errorf("failed to decode manifest: %w", err)
-		}
-
-		kind := raw["kind"].(string)
-		switch kind {
-		case "ServiceAccount":
-			obj = &corev1.ServiceAccount{}
-		case "ClusterRole":
-			obj = &rbacv1.ClusterRole{}
-		case "ClusterRoleBinding":
-			obj = &rbacv1.ClusterRoleBinding{}
-		case "Service":
-			obj = &corev1.Service{}
-		case "Deployment":
-			obj = &appsv1.Deployment{}
-		default:
-			return fmt.Errorf("unsupported kind: %s", kind)
-		}
-
-		// Converter o objeto
-		jsonData, err := json.Marshal(raw)
-		if err != nil {
-			return fmt.Errorf("failed to marshal to json: %w", err)
-		}
-		if err := json.Unmarshal(jsonData, obj); err != nil {
-			return fmt.Errorf("failed to unmarshal to object: %w", err)
-		}
-
-		// Aplicar o objeto
-		switch o := obj.(type) {
-		case *corev1.ServiceAccount:
-			if _, err := clientset.CoreV1().ServiceAccounts(o.Namespace).Create(ctx, o, metav1.CreateOptions{}); err != nil {
-				return fmt.Errorf("failed to create ServiceAccount: %w", err)
-			}
-		case *rbacv1.ClusterRole:
-			if _, err := clientset.RbacV1().ClusterRoles().Create(ctx, o, metav1.CreateOptions{}); err != nil {
-				return fmt.Errorf("failed to create ClusterRole: %w", err)
-			}
-		case *rbacv1.ClusterRoleBinding:
-			if _, err := clientset.RbacV1().ClusterRoleBindings().Create(ctx, o, metav1.CreateOptions{}); err != nil {
-				return fmt.Errorf("failed to create ClusterRoleBinding: %w", err)
-			}
-		case *corev1.Service:
-			if _, err := clientset.CoreV1().Services(o.Namespace).Create(ctx, o, metav1.CreateOptions{}); err != nil {
-				return fmt.Errorf("failed to create Service: %w", err)
-			}
-		case *appsv1.Deployment:
-			if _, err := clientset.AppsV1().Deployments(o.Namespace).Create(ctx, o, metav1.CreateOptions{}); err != nil {
-				return fmt.Errorf("failed to create Deployment: %w", err)
-			}
-		}
-	}
-
-	return nil
 }
 
 // waitForMetrics espera até que as métricas estejam disponíveis
