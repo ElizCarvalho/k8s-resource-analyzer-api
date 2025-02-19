@@ -15,11 +15,14 @@
 # Variáveis do Projeto
 # ==============================================================================
 APP_NAME=k8s-resource-analyzer-api
-DOCKER_IMAGE=ecarvalho2020/$(APP_NAME)
-VERSION?=latest
+DOCKER_IMAGE=eliscarvalho/$(APP_NAME)
+VERSION=$(shell git describe --tags 2>/dev/null || git rev-parse --short HEAD || echo "dev")
 PORT?=9000
 DEBUG_PORT?=2345
 APP_DIR=/usr/app
+
+# Versão e Build Info
+LDFLAGS=-X github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/version.Version=$(VERSION)
 
 # ==============================================================================
 # Variáveis de Ambiente
@@ -81,14 +84,22 @@ VERSION_TAG=$(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
 VERSION_INFO="$(VERSION_TAG) ($(COMMIT_SHA)) - Built on $(BUILD_TIME)"
 
 # ==============================================================================
+# Variáveis de Segurança
+# ==============================================================================
+GOSEC_VERSION=v2.18.2
+NANCY_VERSION=v1.0.45
+
+# ==============================================================================
 # Configuração do Make
 # ==============================================================================
-.PHONY: all build clean test coverage deps run docker-build docker-run docker-push swagger help colors welcome setup format lint debug debug-docker check-deps validate ci cd env-check env-setup security metrics health backup snapshot monitor install-tools analyze version tag release release-docker ci-check cd-check clean-all docs deps-check
+.PHONY: all analyze build build-version ci clean coverage debug debug-docker deps deps-check docker-build docker-push docker-run docs format health install-hooks install-tools lint logs metrics run run-dev run-prod setup setup-dev swagger test test-k8s test-mimir tidy validate version welcome help security-check security-deps
 .DEFAULT_GOAL := help
 
 # ==============================================================================
 # Comandos de Desenvolvimento
 # ==============================================================================
+all: setup deps build ## Executa setup, deps e build em sequência
+
 setup-dev: ## Configura ambiente de desenvolvimento completo
 	@chmod +x ./scripts/dev/setup-dev.sh
 	@./scripts/dev/setup-dev.sh
@@ -119,13 +130,25 @@ check-deps: ## Verifica e instala dependências de desenvolvimento
 	@echo -e "✅ $(GREEN)Todas as dependências estão instaladas!$(NC)"
 
 build: welcome ## Build a versão local para desenvolvimento
-	@echo -e "🔨 $(BLUE)Building$(NC) $(BOLD)$(APP_NAME)$(NC)..."
-	@$(GOBUILD) -o $(APP_NAME) $(MAIN_FILE)
+	@echo -e "🔨 $(BLUE)Building$(NC) $(BOLD)$(APP_NAME)$(NC) versão $(VERSION)..."
+	@$(GOBUILD) -ldflags "$(LDFLAGS)" -o bin/$(APP_NAME) $(MAIN_FILE)
 	@echo -e "✅ $(GREEN)Build completed!$(NC)"
 
-run: ## Roda a aplicação localmente
-	@echo -e "🚀 $(BLUE)Starting$(NC) $(BOLD)$(APP_NAME)$(NC) on port $(YELLOW)$(PORT)$(NC)..."
-	@PORT=$(PORT) $(GORUN) $(MAIN_FILE)
+run: ## Roda a aplicação com a versão do git ou dev
+	@echo -e "🚀 $(BLUE)Iniciando aplicação com versão $(VERSION)$(NC)..."
+	@$(GORUN) -ldflags "$(LDFLAGS)" $(MAIN_FILE)
+
+run-version: ## Roda a aplicação com uma versão específica (make run-version VERSION=1.0.0)
+	@echo -e "🚀 $(BLUE)Iniciando aplicação com versão $(VERSION)$(NC)..."
+	@$(GORUN) -ldflags "$(LDFLAGS)" $(MAIN_FILE)
+
+run-dev: ## Executa a aplicação em modo desenvolvimento
+	@echo -e "🚀 $(BLUE)Iniciando em modo desenvolvimento...$(NC)"
+	@APP_ENV=development $(GORUN) -ldflags "$(LDFLAGS)" $(MAIN_FILE)
+
+run-prod: ## Executa a aplicação em modo produção
+	@echo -e "🚀 $(BLUE)Iniciando em modo produção...$(NC)"
+	@APP_ENV=production $(GORUN) -ldflags "$(LDFLAGS)" $(MAIN_FILE)
 
 clean: ## Limpa os arquivos de build
 	@echo -e "🧹 $(YELLOW)Cleaning$(NC) build files..."
@@ -249,21 +272,10 @@ welcome: ## Mostra o banner de boas-vindas
 	@printf "$$HEADER"
 	@echo -e "$(BLUE)Bem-vindo ao $(BOLD)$(APP_NAME)$(NC)"
 
-colors: ## Demonstração de cores disponíveis
-	@echo -e "=== 🎨 $(BLUE)Demonstração de Cores$(NC) ==="
-	@echo -e "$(RED)Texto em Vermelho$(NC)"
-	@echo -e "$(GREEN)Texto em Verde$(NC)"
-	@echo -e "$(YELLOW)Texto em Amarelo$(NC)"
-	@echo -e "$(BLUE)Texto em Azul$(NC)"
-	@echo -e "$(BOLD)Texto em Negrito$(NC)"
-	@echo -e "$(RED)$(BOLD)Texto em Vermelho e Negrito$(NC)"
-	@echo -e "$(GREEN)$(BOLD)Texto em Verde e Negrito$(NC)"
-
 help: welcome ## Mostra essa ajuda
 	@echo -e "$(BLUE)Comandos disponíveis:$(NC)"
 	@echo
-	@printf "Uso:\n  make \033[36m<target>\033[0m\n\nTargets:\n"
-	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # ==============================================================================
 # Comandos de Validação e CI/CD
@@ -273,12 +285,6 @@ validate: format lint test ## Valida o código (formato, lint e testes)
 
 ci: validate build docker-build ## Pipeline de CI
 	@echo -e "✅ $(GREEN)Pipeline de CI completado com sucesso!$(NC)"
-
-cd: docker-push ## Pipeline de CD
-	@echo -e "🚀 $(BLUE)Iniciando deploy...$(NC)"
-	@echo -e "📦 Version: $(VERSION_INFO)"
-	@echo -e "🌍 Environment: $(ENV)"
-	@echo -e "✅ $(GREEN)Deploy completado com sucesso!$(NC)"
 
 # ==============================================================================
 # Comandos de Monitoramento
@@ -304,45 +310,13 @@ health: ## Verifica saúde da aplicação
 	@curl -s http://localhost:$(PORT)/api/v1/ping || echo -e "$(RED)Aplicação não está respondendo$(NC)"
 
 # ==============================================================================
-# Comandos de Backup
-# ==============================================================================
-backup: ## Backup de configurações
-	@echo -e "💾 $(BLUE)Criando backup...$(NC)"
-	@mkdir -p ./backups/$(shell date +%Y%m%d_%H%M%S)
-	@cp .env* ./backups/$(shell date +%Y%m%d_%H%M%S)/ 2>/dev/null || true
-	@cp config.* ./backups/$(shell date +%Y%m%d_%H%M%S)/ 2>/dev/null || true
-	@echo -e "✅ $(GREEN)Backup criado em ./backups/$(shell date +%Y%m%d_%H%M%S)$(NC)"
-
-snapshot: ## Snapshot do estado atual
-	@echo -e "📸 $(BLUE)Criando snapshot do projeto...$(NC)"
-	@tar -czf ./backups/snapshot_$(shell date +%Y%m%d_%H%M%S).tar.gz \
-		--exclude='.git' \
-		--exclude='vendor' \
-		--exclude='node_modules' \
-		--exclude='*.log' \
-		--exclude='backups' \
-		.
-	@echo -e "✅ $(GREEN)Snapshot criado em ./backups/snapshot_$(shell date +%Y%m%d_%H%M%S).tar.gz$(NC)"
-
-# ==============================================================================
-# Comandos de Monitoramento
-# ==============================================================================
-monitor: ## Inicia o monitoramento interativo
-	@chmod +x ./scripts/ops/monitor.sh
-	@./scripts/ops/monitor.sh
-
-install-tools: ## Instala todas as ferramentas de desenvolvimento
-	@chmod +x ./scripts/dev/install-tools.sh
-	@./scripts/dev/install-tools.sh
-
-# ==============================================================================
 # Comandos de Análise
 # ==============================================================================
-analyze: ## Executa todas as análises (lint, segurança, testes)
+analyze: lint test security-check ## Executa todas as análises (lint, test, security)
 	@echo -e "🔍 $(BLUE)Iniciando análise completa...$(NC)"
 	@$(MAKE) lint
-	@$(MAKE) security-check
 	@$(MAKE) test
+	@$(MAKE) security-check
 	@$(MAKE) metrics
 	@echo -e "✅ $(GREEN)Análise completa finalizada!$(NC)"
 
@@ -354,53 +328,6 @@ version: ## Mostra a versão atual
 	@echo -e "$(YELLOW)Version Tag:$(NC) $(VERSION_TAG)"
 	@echo -e "$(YELLOW)Commit:$(NC) $(COMMIT_SHA)"
 	@echo -e "$(YELLOW)Build Time:$(NC) $(BUILD_TIME)"
-
-tag: ## Cria uma nova tag de versão
-	@echo -e "🏷️ $(BLUE)Criando nova tag...$(NC)"
-	@read -p "Nova versão (atual: $(VERSION_TAG)): " version; \
-	git tag -a $$version -m "Release $$version"
-	@echo -e "✅ $(GREEN)Tag criada com sucesso!$(NC)"
-	@echo -e "💡 Execute 'git push --tags' para publicar a tag"
-
-# ==============================================================================
-# Comandos de Release
-# ==============================================================================
-release: ## Inicia o processo de release
-	@chmod +x ./scripts/ops/release.sh
-	@./scripts/ops/release.sh
-
-release-docker: ## Cria e publica uma nova versão Docker
-	@echo -e "🐳 $(BLUE)Iniciando release Docker...$(NC)"
-	@$(MAKE) docker-build
-	@$(MAKE) docker-push
-	@echo -e "✅ $(GREEN)Release Docker completada!$(NC)"
-
-# ==============================================================================
-# Comandos de CI/CD
-# ==============================================================================
-ci-check: ## Verifica se o código está pronto para CI
-	@echo -e "🔍 $(BLUE)Verificando código para CI...$(NC)"
-	@$(MAKE) format
-	@$(MAKE) lint
-	@$(MAKE) test
-	@$(MAKE) security-check
-	@echo -e "✅ $(GREEN)Código pronto para CI!$(NC)"
-
-cd-check: ## Verifica se está pronto para deploy
-	@echo -e "🚀 $(BLUE)Verificando pré-requisitos para deploy...$(NC)"
-	@$(MAKE) version
-	@$(MAKE) health
-	@echo -e "✅ $(GREEN)Pronto para deploy!$(NC)"
-
-# ==============================================================================
-# Comandos de Limpeza
-# ==============================================================================
-clean-all: clean ## Limpa todos os arquivos gerados
-	@echo -e "🧹 $(BLUE)Limpeza profunda...$(NC)"
-	@rm -rf ./backups/* ./logs/* ./tmp/*
-	@rm -f coverage.out release_notes.md
-	@docker rmi $(DOCKER_IMAGE):$(VERSION) 2>/dev/null || true
-	@echo -e "✨ $(GREEN)Limpeza completa!$(NC)"
 
 # ==============================================================================
 # Comandos de Documentação
@@ -417,4 +344,33 @@ docs: swagger ## Gera toda a documentação
 deps-check: ## Verifica dependências desatualizadas e vulnerabilidades
 	@echo -e "🔍 $(BLUE)Verificando dependências...$(NC)"
 	@chmod +x ./scripts/dev/check-deps.sh
-	@./scripts/dev/check-deps.sh 
+	@./scripts/dev/check-deps.sh
+
+# ==============================================================================
+# Comandos de Desenvolvimento
+# ==============================================================================
+build-version: ## Build com uma versão específica (make build-version VERSION=1.0.0)
+	@echo -e "🔨 $(BLUE)Building$(NC) $(BOLD)$(APP_NAME)$(NC) versão $(VERSION)..."
+	@$(GOBUILD) -ldflags "$(LDFLAGS)" -o bin/$(APP_NAME) $(MAIN_FILE)
+	@echo -e "✅ $(GREEN)Build completed!$(NC)"
+
+# ==============================================================================
+# Comandos de Segurança
+# ==============================================================================
+security-deps: ## Instala dependências de segurança
+	@echo "🔒 Instalando ferramentas de segurança..."
+	@go install github.com/securego/gosec/v2/cmd/gosec@$(GOSEC_VERSION)
+	@go install github.com/sonatype-nexus-community/nancy@$(NANCY_VERSION)
+	@echo "✅ Ferramentas de segurança instaladas!"
+
+security-check: security-deps ## Executa verificações de segurança
+	@echo "🔍 Executando análise de segurança..."
+	@echo "🔒 Verificando código com gosec..."
+	@gosec -quiet ./...
+	@echo "📦 Verificando dependências com nancy..."
+	@go list -json -deps | nancy sleuth
+	@echo "✅ Verificações de segurança concluídas!"
+
+install-tools: ## Instala todas as ferramentas de desenvolvimento
+	@chmod +x ./scripts/dev/install-tools.sh
+	@./scripts/dev/install-tools.sh 
