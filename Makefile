@@ -141,6 +141,16 @@ test: ## Roda os testes
 	@$(GOTEST) -v -race -cover ./...
 	@echo -e "✅ $(GREEN)Tests completed!$(NC)"
 
+test-k8s: ## Testa integração com Kubernetes
+	@echo -e "🔍 $(BLUE)Testando integração com Kubernetes$(NC)..."
+	@$(GOTEST) -v ./tests/integration/k8s/...
+	@echo -e "✅ $(GREEN)Testes K8s completados!$(NC)"
+
+test-mimir: ## Testa integração com Mimir
+	@echo -e "🔍 $(BLUE)Testando integração com Mimir$(NC)..."
+	@$(GOTEST) -v ./tests/integration/mimir/...
+	@echo -e "✅ $(GREEN)Testes Mimir completados!$(NC)"
+
 coverage: ## Roda os testes com cobertura
 	@echo -e "📊 $(BLUE)Generating coverage report$(NC)..."
 	@$(GOTEST) -coverprofile=coverage.out ./...
