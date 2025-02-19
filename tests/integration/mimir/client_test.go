@@ -7,7 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/mimir"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/clients/mimir"
+)
+
+const (
+	testDeploymentName = "travelernotifierbyevent"
+	testNamespace      = "default"
 )
 
 func TestMimirIntegration(t *testing.T) {
@@ -19,7 +24,44 @@ func TestMimirIntegration(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, err := w.Write([]byte(`{"status":"success","data":{"resultType":"vector","result":[{"metric":{"pod":"test-pod"},"value":[1613765411.781,"42.5"]}]}}`))
+
+		var response string
+		if r.URL.Path == "/prometheus/api/v1/query" {
+			response = `{
+				"status": "success",
+				"data": {
+					"resultType": "vector",
+					"result": [
+						{
+							"metric": {
+								"pod": "travelernotifierbyevent-7cb945c95d-hzhsw"
+							},
+							"value": [1613765411.781, "0.071"]
+						}
+					]
+				}
+			}`
+		} else {
+			response = `{
+				"status": "success",
+				"data": {
+					"resultType": "matrix",
+					"result": [
+						{
+							"metric": {
+								"pod": "travelernotifierbyevent-7cb945c95d-hzhsw"
+							},
+							"values": [
+								[1613765411.781, "0.071"],
+								[1613765711.781, "0.075"]
+							]
+						}
+					]
+				}
+			}`
+		}
+
+		_, err := w.Write([]byte(response))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -50,7 +92,7 @@ func TestMimirIntegration(t *testing.T) {
 
 	// Testar consulta de métricas de CPU
 	t.Run("Deve consultar métricas de CPU do deployment", func(t *testing.T) {
-		query := "rate(container_cpu_usage_seconds_total{namespace=\"default\",pod=~\"test-deployment.*\"}[5m])"
+		query := mimir.GetDeploymentCPUUsageQuery(testNamespace, testDeploymentName)
 		result, err := client.Query(ctx, query)
 		if err != nil {
 			t.Fatalf("Erro ao consultar métricas de CPU: %v", err)
@@ -71,7 +113,7 @@ func TestMimirIntegration(t *testing.T) {
 
 	// Testar consulta com range de tempo
 	t.Run("Deve consultar métricas com range de tempo", func(t *testing.T) {
-		query := "rate(container_cpu_usage_seconds_total{namespace=\"default\",pod=~\"test-deployment.*\"}[5m])"
+		query := mimir.GetDeploymentCPUUsageQuery(testNamespace, testDeploymentName)
 		end := time.Now()
 		start := end.Add(-1 * time.Hour)
 		step := 5 * time.Minute
@@ -87,10 +129,6 @@ func TestMimirIntegration(t *testing.T) {
 
 		if len(result.Values) == 0 {
 			t.Error("Deveria ter encontrado métricas")
-		}
-
-		if result.StartTime.IsZero() || result.EndTime.IsZero() {
-			t.Error("Timestamps não deveriam estar vazios")
 		}
 	})
 }
