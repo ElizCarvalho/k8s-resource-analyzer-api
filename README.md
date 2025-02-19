@@ -298,3 +298,147 @@ make test
 # Roda testes com cobertura
 make test-cover
 ```
+
+## Funcionalidades
+
+- Coleta de métricas atuais de CPU, memória e pods
+- Histórico de utilização de recursos
+- Análise de tendências de uso
+- Integração com Mimir para armazenamento de métricas de longo prazo
+
+## Requisitos
+
+- Go 1.21 ou superior
+- Kubernetes 1.19 ou superior
+- Metrics Server instalado no cluster
+- Mimir para armazenamento de métricas históricas
+
+## Configuração
+
+### Variáveis de Ambiente
+
+- `KUBECONFIG`: Caminho para o arquivo kubeconfig (opcional, usado apenas fora do cluster)
+- `IN_CLUSTER`: Define se a API está rodando dentro do cluster (`true` ou `false`)
+- `MIMIR_URL`: URL do servidor Mimir
+- `GIN_MODE`: Modo de execução do Gin (`debug` ou `release`)
+
+## Instalação
+
+### Local
+
+1. Clone o repositório:
+```bash
+git clone https://github.com/ElizCarvalho/k8s-resource-analyzer-api.git
+cd k8s-resource-analyzer-api
+```
+
+2. Instale as dependências:
+```bash
+go mod download
+```
+
+3. Execute a aplicação:
+```bash
+go run cmd/api/main.go
+```
+
+### Docker
+
+1. Construa a imagem:
+```bash
+docker build -t k8s-resource-analyzer-api:latest .
+```
+
+2. Execute o container:
+```bash
+docker run -p 8080:8080 k8s-resource-analyzer-api:latest
+```
+
+### Kubernetes
+
+1. Aplique os manifestos:
+```bash
+kubectl apply -f k8s/deployment.yaml
+```
+
+## Uso
+
+### Obter Métricas
+
+```bash
+curl "http://localhost:8080/metrics?namespace=default&deployment=my-app&period=24h"
+```
+
+### Exemplo de Resposta
+
+```json
+{
+  "current": {
+    "cpu": {
+      "average": 0.25,
+      "peak": 0.45,
+      "usage": 0.35,
+      "request": 0.5,
+      "limit": 1.0,
+      "utilization": 70.0
+    },
+    "memory": {
+      "average": 256.0,
+      "peak": 512.0,
+      "usage": 384.0,
+      "request": 512.0,
+      "limit": 1024.0,
+      "utilization": 75.0
+    },
+    "pods": {
+      "running": 3,
+      "replicas": 3,
+      "minReplicas": 2,
+      "maxReplicas": 5
+    }
+  },
+  "historical": {
+    "cpu": [...],
+    "memory": [...],
+    "pods": [...],
+    "period": "24h"
+  },
+  "trends": {
+    "cpu": {
+      "trend": 0.15,
+      "confidence": 0.95,
+      "period": "24h"
+    },
+    "memory": {
+      "trend": 0.08,
+      "confidence": 0.92,
+      "period": "24h"
+    },
+    "pods": {
+      "trend": 0.0,
+      "confidence": 1.0,
+      "period": "24h"
+    }
+  },
+  "metadata": {
+    "collectedAt": "2024-03-20T10:30:00Z",
+    "timeWindow": "24h"
+  }
+}
+```
+
+## Documentação da API
+
+A documentação da API está disponível em formato OpenAPI/Swagger em `/docs/swagger.yaml`.
+
+## Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Crie um Pull Request
+
+## Licença
+
+Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para mais detalhes.
