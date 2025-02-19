@@ -149,8 +149,11 @@ coverage: ## Roda os testes com cobertura
 
 format: ## Formata o código
 	@echo -e "✨ $(BLUE)Formatting code$(NC)..."
-	@command -v goimports >/dev/null 2>&1 || go install golang.org/x/tools/cmd/goimports@latest
-	@goimports -l -w -d $(PROJECT_FILES)
+	@if ! command -v goimports >/dev/null 2>&1; then \
+		go install golang.org/x/tools/cmd/goimports@latest; \
+		export PATH="$$PATH:$$(go env GOPATH)/bin"; \
+	fi
+	@$$(go env GOPATH)/bin/goimports -l -w -d $(PROJECT_FILES)
 	@gofmt -l -s -w $(PROJECT_FILES)
 	@echo -e "✅ $(GREEN)Code formatted!$(NC)"
 
