@@ -212,9 +212,8 @@ func TestGetDeploymentMetrics(t *testing.T) {
 	}
 
 	// Criar cliente de teste
-	cfg := &k8s.Config{
+	cfg := &k8s.ClientConfig{
 		KubeconfigPath: kubeconfigFile.Name(),
-		Namespace:      testNamespace,
 		InCluster:      false,
 	}
 
@@ -224,25 +223,28 @@ func TestGetDeploymentMetrics(t *testing.T) {
 	}
 
 	// Testar obtenção de métricas
-	metrics, err := client.GetDeploymentMetrics(ctx, testDeploymentName)
+	metrics, err := client.GetDeploymentMetrics(ctx, "default", testDeploymentName)
 	if err != nil {
 		t.Fatalf("failed to get metrics: %v", err)
 	}
 
-	if len(metrics.Pods) == 0 {
+	// Validar métricas
+	if metrics.Pods.Running == 0 {
 		t.Error("expected pod metrics, got none")
 	}
 
-	// Validar métricas
-	for _, pod := range metrics.Pods {
-		if pod.CPU == "" {
-			t.Error("expected CPU metrics")
-		}
-		if pod.Memory == "" {
-			t.Error("expected Memory metrics")
-		}
-		t.Logf("Pod %s: CPU=%s, Memory=%s", pod.Name, pod.CPU, pod.Memory)
+	// Validar valores de CPU e memória
+	if metrics.CPU.Usage == 0 {
+		t.Error("expected CPU metrics")
 	}
+	if metrics.Memory.Usage == 0 {
+		t.Error("expected Memory metrics")
+	}
+
+	t.Logf("Métricas: CPU=%.2f, Memory=%.2f, Pods=%d",
+		metrics.CPU.Usage,
+		metrics.Memory.Usage,
+		metrics.Pods.Running)
 
 	// Instalar metrics-server
 	t.Log("Instalando metrics-server...")
@@ -400,9 +402,8 @@ func TestGetTravelerNotifierMetrics(t *testing.T) {
 	kubeconfigPath := filepath.Join(homeDir, ".kube", "config")
 
 	// Criar cliente usando o kubeconfig do ambiente
-	cfg := &k8s.Config{
+	cfg := &k8s.ClientConfig{
 		KubeconfigPath: kubeconfigPath,
-		Namespace:      "default", // ajuste se necessário
 		InCluster:      false,
 	}
 
@@ -412,23 +413,26 @@ func TestGetTravelerNotifierMetrics(t *testing.T) {
 	}
 
 	// Testar obtenção de métricas
-	metrics, err := client.GetDeploymentMetrics(ctx, "travelernotifierbyevent")
+	metrics, err := client.GetDeploymentMetrics(ctx, "default", "travelernotifierbyevent")
 	if err != nil {
 		t.Fatalf("failed to get metrics: %v", err)
 	}
 
-	if len(metrics.Pods) == 0 {
+	// Validar métricas
+	if metrics.Pods.Running == 0 {
 		t.Error("expected pod metrics, got none")
 	}
 
-	// Validar métricas
-	for _, pod := range metrics.Pods {
-		if pod.CPU == "" {
-			t.Error("expected CPU metrics")
-		}
-		if pod.Memory == "" {
-			t.Error("expected Memory metrics")
-		}
-		t.Logf("Pod %s: CPU=%s, Memory=%s", pod.Name, pod.CPU, pod.Memory)
+	// Validar valores de CPU e memória
+	if metrics.CPU.Usage == 0 {
+		t.Error("expected CPU metrics")
 	}
+	if metrics.Memory.Usage == 0 {
+		t.Error("expected Memory metrics")
+	}
+
+	t.Logf("Métricas: CPU=%.2f, Memory=%.2f, Pods=%d",
+		metrics.CPU.Usage,
+		metrics.Memory.Usage,
+		metrics.Pods.Running)
 }
