@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Cores para output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+# Pega a mensagem do commit
+commit_msg=$(cat "$1")
+
+# Padrão Conventional Commits
+pattern="^(feat|fix|docs|style|refactor|test|chore)(\([a-z-]+\))?: .{1,50}$"
+
+if ! echo "$commit_msg" | grep -qE "$pattern"; then
+    echo "${RED}❌ Erro: Mensagem de commit inválida${NC}"
+    echo "Formato esperado: <tipo>(<escopo>): <descrição>"
+    echo "Tipos válidos: feat, fix, docs, style, refactor, test, chore"
+    echo "Exemplo: feat(api): adiciona endpoint de métricas"
+    echo "Máximo: 50 caracteres"
+    exit 1
+fi
+
+echo "${GREEN}✅ Mensagem de commit válida${NC}"
+exit 0 
