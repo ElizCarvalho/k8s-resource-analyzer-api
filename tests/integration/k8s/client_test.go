@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
@@ -109,7 +110,7 @@ func TestGetDeploymentMetrics(t *testing.T) {
 	k3sContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:        "rancher/k3s:latest",
-			Cmd:          []string{"server"},
+			Cmd:          []string{"server", "--disable-network-policy", "--disable", "traefik"},
 			ExposedPorts: []string{"6443/tcp"},
 			Privileged:   true,
 			Binds: []string{
@@ -242,6 +243,125 @@ func TestGetDeploymentMetrics(t *testing.T) {
 		}
 		t.Logf("Pod %s: CPU=%s, Memory=%s", pod.Name, pod.CPU, pod.Memory)
 	}
+
+	// Instalar metrics-server
+	t.Log("Instalando metrics-server...")
+	metricsServerManifest := `
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: metrics-server
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:metrics-server
+rules:
+- apiGroups: [""]
+  resources: ["pods", "nodes", "nodes/stats", "namespaces", "configmaps"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:metrics-server
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:metrics-server
+subjects:
+- kind: ServiceAccount
+  name: metrics-server
+  namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics-server
+  namespace: kube-system
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 4443
+  selector:
+    k8s-app: metrics-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-server
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      k8s-app: metrics-server
+  template:
+    metadata:
+      labels:
+        k8s-app: metrics-server
+    spec:
+      serviceAccountName: metrics-server
+      volumes:
+      - name: tmp-dir
+        emptyDir: {}
+      containers:
+      - name: metrics-server
+        image: k8s.gcr.io/metrics-server/metrics-server:v0.6.3
+        args:
+          - --cert-dir=/tmp
+          - --secure-port=4443
+          - --kubelet-insecure-tls
+          - --kubelet-preferred-address-types=InternalIP
+        ports:
+        - name: tcp-4443
+          containerPort: 4443
+          protocol: TCP
+        volumeMounts:
+        - name: tmp-dir
+          mountPath: /tmp
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+---
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  name: v1beta1.metrics.k8s.io
+spec:
+  service:
+    name: metrics-server
+    namespace: kube-system
+  group: metrics.k8s.io
+  version: v1beta1
+  insecureSkipTLSVerify: true
+  groupPriorityMinimum: 100
+  versionPriority: 100`
+
+	// Criar arquivo temporário para o manifesto do metrics-server
+	metricsServerFile, err := os.CreateTemp("", "metrics-server-*.yaml")
+	if err != nil {
+		t.Fatalf("failed to create metrics-server manifest file: %v", err)
+	}
+	defer os.Remove(metricsServerFile.Name())
+
+	if _, err := metricsServerFile.WriteString(metricsServerManifest); err != nil {
+		t.Fatalf("failed to write metrics-server manifest: %v", err)
+	}
+	metricsServerFile.Close()
+
+	// Aplicar manifesto do metrics-server usando kubectl
+	kubectlApply := fmt.Sprintf("kubectl --kubeconfig=%s apply -f %s", kubeconfigFile.Name(), metricsServerFile.Name())
+	if err := exec.Command("sh", "-c", kubectlApply).Run(); err != nil {
+		t.Fatalf("failed to apply metrics-server manifest: %v", err)
+	}
+
+	// Esperar mais tempo para o metrics-server iniciar
+	t.Log("Aguardando metrics-server iniciar...")
+	time.Sleep(45 * time.Second)
 }
 
 // waitForMetrics espera até que as métricas estejam disponíveis
