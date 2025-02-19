@@ -1,17 +1,22 @@
 package main
 
 import (
+	"context"
+	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/api/middleware"
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/api/routes"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/domain/metrics"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/config"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/k8s"
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/logger"
-
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/mimir"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/pricing"
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
-
-	_ "github.com/ElizCarvalho/k8s-resource-analyzer-api/docs" // Importa os docs gerados pelo Swagger
 )
 
 // @title K8s Resource Analyzer API
@@ -29,48 +34,84 @@ import (
 // @tag.description Endpoints para monitoramento da saúde da API
 
 func main() {
-	// Inicializa o logger
+	// Carrega as configurações
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Erro ao carregar configurações: %v", err)
+	}
+
+	// Configura o logger
 	logger.Setup()
-	log := logger.Logger
 
-	// Configurar modo de execução
-	gin.SetMode(getEnv("GIN_MODE", "debug"))
-
-	// Inicializar router
-	r := gin.Default()
-
-	// Adiciona middleware de RequestID
-	r.Use(middleware.RequestID())
-
-	// Configurar rotas
-	routes.SetupRoutes(r)
-
-	// Configurar Swagger
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
-		ginSwagger.URL("http://localhost:9000/swagger/doc.json"),
-		ginSwagger.DefaultModelsExpandDepth(-1)))
-
-	// Iniciar servidor
-	port := getEnv("PORT", "9000")
-	log.Info().
-		Str("port", port).
-		Msg("🚀 Servidor iniciando...")
-
-	log.Info().
-		Str("url", "http://localhost:"+port+"/swagger/index.html").
-		Msg("📚 Documentação Swagger disponível")
-
-	if err := r.Run(":" + port); err != nil {
-		log.Fatal().
-			Err(err).
-			Msg("❌ Erro ao iniciar servidor")
+	// Configura o cliente Kubernetes
+	k8sClient, err := k8s.NewClient(&k8s.ClientConfig{
+		KubeconfigPath: cfg.K8s.KubeconfigPath,
+		InCluster:      cfg.K8s.InCluster,
+	})
+	if err != nil {
+		log.Fatalf("Erro ao criar cliente Kubernetes: %v", err)
 	}
-}
 
-// Utilitário para obter variáveis de ambiente
-func getEnv(key, fallback string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
+	// Configura o cliente Mimir
+	mimirClient := mimir.NewClient(&mimir.ClientConfig{
+		BaseURL:     cfg.Mimir.URL,
+		ServiceName: cfg.Mimir.ServiceName,
+		Namespace:   cfg.Mimir.Namespace,
+		LocalPort:   cfg.Mimir.LocalPort,
+		ServicePort: cfg.Mimir.ServicePort,
+		OrgID:       cfg.Mimir.OrgID,
+	})
+
+	// Configura o cliente de preços
+	pricingClient := pricing.NewClient(&pricing.Config{
+		ExchangeURL: cfg.Pricing.ExchangeURL,
+		Timeout:     cfg.Pricing.Timeout,
+	})
+
+	// Configura o modo do Gin
+	gin.SetMode(cfg.Server.GinMode)
+
+	// Cria o serviço de métricas
+	metricsService := metrics.NewService(k8sClient, mimirClient, pricingClient)
+
+	// Configura o router
+	router := gin.Default()
+
+	// Configura as rotas
+	routes.SetupRoutes(router, k8sClient, mimirClient, metricsService)
+
+	// Configura o servidor
+	srv := &http.Server{
+		Addr:              ":" + cfg.Server.Port,
+		Handler:           router,
+		ReadHeaderTimeout: 20 * time.Second,
+		ReadTimeout:       1 * time.Minute,
+		WriteTimeout:      2 * time.Minute,
+		IdleTimeout:       30 * time.Second,
+		MaxHeaderBytes:    1 << 20, // 1MB
 	}
-	return fallback
+
+	// Inicia o servidor em uma goroutine
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Erro ao iniciar servidor: %v", err)
+		}
+	}()
+
+	// Configura o canal para sinais de interrupção
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Desligando servidor...")
+
+	// Contexto com timeout para shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Tenta desligar o servidor graciosamente
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Erro ao desligar servidor: %v", err)
+	}
+
+	log.Println("Servidor desligado com sucesso")
 }
