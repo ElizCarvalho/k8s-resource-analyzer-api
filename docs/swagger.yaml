@@ -1,57 +1,258 @@
-basePath: /api/v1
-definitions:
-  response.Response:
-    properties:
-      data:
-        description: Dados da resposta (opcional)
-      error:
-        description: Mensagem de erro (opcional)
-        type: string
-      message:
-        description: Mensagem descritiva
-        type: string
-      request_id:
-        description: ID único da requisição
-        type: string
-      success:
-        description: Indica se a requisição foi bem sucedida
-        type: boolean
-      timestamp:
-        description: Timestamp da resposta
-        type: string
-    type: object
-host: localhost:9000
+openapi: 3.0.0
 info:
-  contact:
-    email: elizabethcarvalh0@yahoo.com
-    name: Elizabeth Carvalho
-    url: https://github.com/ElizCarvalho/k8s-resource-analyzer-api
-  description: API para análise e otimização de recursos Kubernetes com foco em FinOps.
-    Fornece métricas de utilização, recomendações de custos e análise de eficiência
-    dos recursos em clusters Kubernetes.
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
   title: K8s Resource Analyzer API
-  version: "1.0"
+  description: API para análise de recursos do Kubernetes
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Servidor local
 paths:
-  /ping:
+  /health:
     get:
-      description: Retorna pong se a API estiver funcionando
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.Response'
-      summary: Endpoint de health check
+      summary: Verifica a saúde da API
+      description: Endpoint para verificar se a API está funcionando corretamente
       tags:
-      - health
-schemes:
-- http
-- https
-swagger: "2.0"
-tags:
-- description: Endpoints para monitoramento da saúde da API
-  name: health
+        - health
+      responses:
+        '200':
+          description: API está saudável
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                    description: Status atual da API
+        '500':
+          description: API está com problemas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "unhealthy"
+                    description: Status atual da API
+                  error:
+                    type: string
+                    description: Descrição do problema
+  /metrics:
+    get:
+      summary: Obtém métricas de um deployment
+      description: Retorna métricas atuais, históricas e tendências de uso de recursos de um deployment
+      parameters:
+        - name: namespace
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Namespace do deployment
+        - name: deployment
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Nome do deployment
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Período para análise (ex. "24h", "7d", "30d")
+      responses:
+        '200':
+          description: Métricas obtidas com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  current:
+                    type: object
+                    properties:
+                      cpu:
+                        type: object
+                        properties:
+                          average:
+                            type: number
+                            description: Uso médio de CPU em cores
+                          peak:
+                            type: number
+                            description: Pico de uso de CPU em cores
+                          usage:
+                            type: number
+                            description: Uso atual de CPU em cores
+                          request:
+                            type: number
+                            description: CPU solicitada em cores
+                          limit:
+                            type: number
+                            description: Limite de CPU em cores
+                          utilization:
+                            type: number
+                            description: Porcentagem de utilização de CPU
+                      memory:
+                        type: object
+                        properties:
+                          average:
+                            type: number
+                            description: Uso médio de memória em GB
+                          peak:
+                            type: number
+                            description: Pico de uso de memória em GB
+                          usage:
+                            type: number
+                            description: Uso atual de memória em GB
+                          request:
+                            type: number
+                            description: Memória solicitada em GB
+                          limit:
+                            type: number
+                            description: Limite de memória em GB
+                          utilization:
+                            type: number
+                            description: Porcentagem de utilização de memória
+                      pods:
+                        type: object
+                        properties:
+                          running:
+                            type: integer
+                            description: Número de pods em execução
+                          replicas:
+                            type: integer
+                            description: Número de réplicas desejadas
+                          minReplicas:
+                            type: integer
+                            description: Número mínimo de réplicas
+                          maxReplicas:
+                            type: integer
+                            description: Número máximo de réplicas
+                  historical:
+                    type: object
+                    properties:
+                      cpu:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CPUMetrics'
+                      memory:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MemoryMetrics'
+                      pods:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PodMetrics'
+                      period:
+                        type: string
+                        description: Período analisado
+                  trends:
+                    type: object
+                    properties:
+                      cpu:
+                        $ref: '#/components/schemas/TrendData'
+                      memory:
+                        $ref: '#/components/schemas/TrendData'
+                      pods:
+                        $ref: '#/components/schemas/TrendData'
+                  metadata:
+                    type: object
+                    properties:
+                      collectedAt:
+                        type: string
+                        format: date-time
+                        description: Data e hora da coleta
+                      timeWindow:
+                        type: string
+                        description: Janela de tempo analisada
+        '400':
+          description: Parâmetros inválidos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+components:
+  schemas:
+    CPUMetrics:
+      type: object
+      properties:
+        average:
+          type: number
+          description: Uso médio de CPU em cores
+        peak:
+          type: number
+          description: Pico de uso de CPU em cores
+        usage:
+          type: number
+          description: Uso atual de CPU em cores
+        request:
+          type: number
+          description: CPU solicitada em cores
+        limit:
+          type: number
+          description: Limite de CPU em cores
+        utilization:
+          type: number
+          description: Porcentagem de utilização de CPU
+    MemoryMetrics:
+      type: object
+      properties:
+        average:
+          type: number
+          description: Uso médio de memória em GB
+        peak:
+          type: number
+          description: Pico de uso de memória em GB
+        usage:
+          type: number
+          description: Uso atual de memória em GB
+        request:
+          type: number
+          description: Memória solicitada em GB
+        limit:
+          type: number
+          description: Limite de memória em GB
+        utilization:
+          type: number
+          description: Porcentagem de utilização de memória
+    PodMetrics:
+      type: object
+      properties:
+        running:
+          type: integer
+          description: Número de pods em execução
+        replicas:
+          type: integer
+          description: Número de réplicas desejadas
+        minReplicas:
+          type: integer
+          description: Número mínimo de réplicas
+        maxReplicas:
+          type: integer
+          description: Número máximo de réplicas
+    TrendData:
+      type: object
+      properties:
+        trend:
+          type: number
+          description: Tendência de crescimento/decrescimento
+        confidence:
+          type: number
+          description: Nível de confiança da tendência (0-1)
+        period:
+          type: string
+          description: Período analisado
