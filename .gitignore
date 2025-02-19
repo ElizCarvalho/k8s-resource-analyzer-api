@@ -51,4 +51,7 @@ __debug_bin
 
 # Go specific
 *.prof
-*.trace 
+*.trace
+
+# Non-committed files
+nao-commitar/ 
