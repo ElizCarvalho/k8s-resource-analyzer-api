@@ -1,80 +1,84 @@
-# ADR 001: Escolha do Gin como Framework Web
+# ADR 001: Escolha do Framework Gin
 
 ## Status
-
 Aceito
 
 ## Contexto
-
-Para o desenvolvimento da API do K8s Resource Analyzer, precisávamos escolher um framework web em Go que atendesse aos seguintes requisitos:
-
-- Alta performance para processamento de métricas
-- Boa documentação e comunidade ativa
-- Facilidade de integração com Swagger/OpenAPI
-- Suporte a middleware para funcionalidades como logging e autenticação
-- Maturidade e estabilidade comprovada em produção
+Para o desenvolvimento da API do K8s Resource Analyzer, precisamos de um framework web que atenda aos seguintes requisitos:
+- Alta performance
+- Baixo overhead de memória
+- Facilidade de desenvolvimento
+- Boa documentação
+- Suporte a middleware
+- Comunidade ativa
 
 ## Decisão
-
-Decidimos utilizar o [Gin](https://gin-gonic.com/) como framework web pelos seguintes motivos:
+Decidimos utilizar o Gin Framework pelos seguintes motivos:
 
 1. **Performance**
-   - O Gin é construído sobre o `httprouter`, conhecido por sua eficiência
-   - Oferece zero allocation em middlewares
-   - Excelente performance em benchmarks comparativos
+   - Zero allocation router
+   - Baixo overhead de memória
+   - Resposta rápida a requisições
+   - Eficiente em cargas altas
 
-2. **Funcionalidades**
-   - Sistema de middleware robusto e flexível
-   - Suporte nativo a binding de JSON/XML
-   - Validação de requests integrada
-   - Gerenciamento de grupos de rotas
-   - Suporte a streaming de respostas
+2. **Desenvolvimento**
+   - API intuitiva e limpa
+   - Middleware flexível
+   - Validação de requests
+   - Binding automático
 
-3. **Ecossistema**
-   - Integração direta com Swagger via `gin-swagger`
-   - Grande número de middlewares disponíveis
-   - Comunidade ativa e grande base de usuários
-   - Documentação completa e atualizada
-
-4. **Maturidade**
-   - Usado em produção por grandes empresas
-   - Versão estável e bem mantida
-   - Histórico comprovado de segurança
-
-## Consequências
-
-### Positivas
-
-1. Desenvolvimento mais rápido com APIs bem definidas
-2. Performance otimizada para processamento de métricas
-3. Fácil integração com Swagger para documentação
-4. Curva de aprendizado suave para novos desenvolvedores
-5. Boa extensibilidade via middlewares
-
-### Negativas
-
-1. Algumas funcionalidades avançadas requerem middlewares de terceiros
-2. Necessidade de manter compatibilidade com versões do Gin em atualizações
+3. **Maturidade**
+   - Framework estabelecido
+   - Comunidade grande
+   - Documentação completa
+   - Muitos exemplos disponíveis
 
 ## Alternativas Consideradas
 
 1. **Echo**
-   - Também oferece boa performance
-   - Menor comunidade
-   - Menos integrações disponíveis
+   - ✅ Performance similar
+   - ✅ API limpa
+   - ❌ Menos middleware disponível
+   - ❌ Comunidade menor
+   - ❌ Menos exemplos
 
-2. **Chi**
-   - Mais minimalista
-   - Requer mais código boilerplate
-   - Menos funcionalidades out-of-the-box
+2. **Fiber**
+   - ✅ Performance excelente
+   - ✅ API moderna
+   - ❌ Menos maduro
+   - ❌ Documentação limitada
+   - ❌ Menos estável
 
-3. **Fiber**
-   - Performance excelente
-   - Menos maduro
-   - Menor ecossistema
+3. **Chi**
+   - ✅ Minimalista
+   - ✅ Compatível com net/http
+   - ❌ Mais código boilerplate
+   - ❌ Menos funcionalidades
+   - ❌ Setup mais manual
+
+## Consequências
+
+### Positivas
+1. Desenvolvimento rápido
+2. Performance excelente
+3. Fácil manutenção
+4. Boa testabilidade
+5. Middleware rico
+
+### Negativas
+1. Algumas opiniões fortes do framework
+2. Necessidade de aprendizado específico
+3. Dependência de terceiros
+4. Possível overhead em casos simples
+
+## Validação
+- Testes de performance
+- Facilidade de implementação
+- Cobertura de funcionalidades
+- Feedback da equipe
 
 ## Referências
-
-- [Gin Web Framework](https://gin-gonic.com/)
-- [Gin GitHub Repository](https://github.com/gin-gonic/gin)
-- [Gin vs Other Frameworks Benchmark](https://github.com/gin-gonic/gin#benchmarks) 
+- [Gin Web Framework](https://github.com/gin-gonic/gin)
+- [Gin vs Other Frameworks](https://github.com/gin-gonic/gin#benchmarks)
+- [Gin Documentation](https://gin-gonic.com/docs/)
+- [Go Web Framework Comparison](https://github.com/mingrammer/go-web-framework-stars) 
