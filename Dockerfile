@@ -1,33 +1,42 @@
 # Build stage
-FROM golang:1.22.2-alpine AS builder
+FROM golang:1.21-alpine AS builder
 
+# Instala dependências de build
+RUN apk add --no-cache git
+
+# Define o diretório de trabalho
 WORKDIR /app
 
-# Copy go mod and sum files
+# Copia os arquivos de dependências
 COPY go.mod go.sum ./
 
-# Download dependencies
+# Baixa as dependências
 RUN go mod download
 
-# Copy source code
+# Copia o código fonte
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o k8s-resource-analyzer-api ./cmd/api
+# Compila a aplicação
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o k8s-resource-analyzer-api ./cmd/api
 
 # Final stage
 FROM alpine:3.19
 
+# Instala certificados CA
+RUN apk add --no-cache ca-certificates
+
+# Define o diretório de trabalho
 WORKDIR /app
 
-# Copy binary from builder
+# Copia o binário compilado
 COPY --from=builder /app/k8s-resource-analyzer-api .
 
-# Copy .env.example as default config
-COPY .env.example .env
+# Expõe a porta da API
+EXPOSE 8080
 
-# Expose port
-EXPOSE 9000
+# Define as variáveis de ambiente padrão
+ENV GIN_MODE=release
+ENV IN_CLUSTER=true
 
-# Run the application
+# Executa a aplicação
 CMD ["./k8s-resource-analyzer-api"] 
