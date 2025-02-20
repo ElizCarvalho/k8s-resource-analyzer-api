@@ -38,13 +38,13 @@ func NewK8sMimirCollector(k8sClient K8sClient, mimirClient MimirClient) *K8sMimi
 
 // GetDeploymentMetrics retorna métricas atuais de um deployment
 func (c *K8sMimirCollector) GetDeploymentMetrics(ctx context.Context, namespace, name string) (*types.K8sMetrics, error) {
-	logger.Info("Coletando métricas do deployment",
+	logger.Info("Collecting deployment metrics",
 		logger.NewField("namespace", namespace),
 		logger.NewField("deployment", name),
 	)
 	metrics, err := c.K8sClient.GetDeploymentMetrics(ctx, namespace, name)
 	if err != nil {
-		logger.Error("Erro ao coletar métricas do deployment", err,
+		logger.Error("Failed to collect deployment metrics", err,
 			logger.NewField("namespace", namespace),
 			logger.NewField("deployment", name),
 		)
@@ -55,13 +55,13 @@ func (c *K8sMimirCollector) GetDeploymentMetrics(ctx context.Context, namespace,
 
 // GetDeploymentConfig retorna configurações de um deployment
 func (c *K8sMimirCollector) GetDeploymentConfig(ctx context.Context, namespace, name string) (*types.K8sDeploymentConfig, error) {
-	logger.Info("Coletando configuração do deployment",
+	logger.Info("Collecting deployment configuration",
 		logger.NewField("namespace", namespace),
 		logger.NewField("deployment", name),
 	)
 	config, err := c.K8sClient.GetDeploymentConfig(ctx, namespace, name)
 	if err != nil {
-		logger.Error("Erro ao coletar configuração do deployment", err,
+		logger.Error("Failed to collect deployment configuration", err,
 			logger.NewField("namespace", namespace),
 			logger.NewField("deployment", name),
 		)
@@ -72,12 +72,12 @@ func (c *K8sMimirCollector) GetDeploymentConfig(ctx context.Context, namespace, 
 
 // Query executa uma query pontual
 func (c *K8sMimirCollector) Query(ctx context.Context, query string) (*types.QueryResult, error) {
-	logger.Info("Executando query pontual",
+	logger.Info("Executing instant query",
 		logger.NewField("query", query),
 	)
 	result, err := c.MimirClient.Query(ctx, query)
 	if err != nil {
-		logger.Error("Erro ao executar query pontual", err,
+		logger.Error("Failed to execute instant query", err,
 			logger.NewField("query", query),
 		)
 		return nil, err
@@ -87,7 +87,7 @@ func (c *K8sMimirCollector) Query(ctx context.Context, query string) (*types.Que
 
 // QueryRange executa uma query com range de tempo
 func (c *K8sMimirCollector) QueryRange(ctx context.Context, query string, start, end time.Time, step time.Duration) (*types.QueryRangeResult, error) {
-	logger.Info("Executando query com range",
+	logger.Info("Executing range query",
 		logger.NewField("query", query),
 		logger.NewField("start", start),
 		logger.NewField("end", end),
@@ -95,11 +95,8 @@ func (c *K8sMimirCollector) QueryRange(ctx context.Context, query string, start,
 	)
 	result, err := c.MimirClient.QueryRange(ctx, query, start, end, step)
 	if err != nil {
-		logger.Error("Erro ao executar query com range", err,
+		logger.Error("Failed to execute range query", err,
 			logger.NewField("query", query),
-			logger.NewField("start", start),
-			logger.NewField("end", end),
-			logger.NewField("step", step),
 		)
 		return nil, err
 	}

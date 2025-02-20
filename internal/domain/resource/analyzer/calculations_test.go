@@ -49,11 +49,9 @@ func TestCalculateCPUDistribution(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := calculateCPUDistribution(tt.cpu)
 			if len(got) != len(tt.want) {
-				t.Errorf("calculateCPUDistribution() retornou %d faixas, esperado %d", len(got), len(tt.want))
-			}
-			for k, v := range tt.want {
-				if got[k] != v {
-					t.Errorf("calculateCPUDistribution() para faixa %s = %v, esperado %v", k, got[k], v)
+				t.Errorf("calculateCPUDistribution() returned %d ranges, expected %d", len(got), len(tt.want))
+				for k, v := range tt.want {
+					t.Errorf("calculateCPUDistribution() for range %s = %v, expected %v", k, got[k], v)
 				}
 			}
 		})
@@ -85,7 +83,7 @@ func TestBuildCPUHistoricalQuery(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := buildCPUHistoricalQuery(tt.namespace, tt.deployment)
 			if got != tt.want {
-				t.Errorf("buildCPUHistoricalQuery() = %v, want %v", got, tt.want)
+				t.Errorf("buildCPUHistoricalQuery() = %v, expected %v", got, tt.want)
 			}
 		})
 	}
@@ -116,7 +114,7 @@ func TestBuildMemoryHistoricalQuery(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := buildMemoryHistoricalQuery(tt.namespace, tt.deployment)
 			if got != tt.want {
-				t.Errorf("buildMemoryHistoricalQuery() = %v, want %v", got, tt.want)
+				t.Errorf("buildMemoryHistoricalQuery() = %v, expected %v", got, tt.want)
 			}
 		})
 	}

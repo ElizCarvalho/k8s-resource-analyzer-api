@@ -82,17 +82,17 @@ func parseValue(value string) (float64, error) {
 
 // Query executa uma query instantânea no Mimir
 func (c *Client) Query(ctx context.Context, query string) (*types.QueryResult, error) {
-	logger.Info("Executando query instantânea",
+	logger.Info("Executing instant query",
 		logger.NewField("base_url", c.baseURL),
 		logger.NewField("query", query),
 	)
 
 	u, err := url.Parse(c.baseURL + "/prometheus/api/v1/query")
 	if err != nil {
-		logger.Error("Erro ao fazer parse da URL", err,
-			logger.NewField("base_url", c.baseURL),
+		logger.Error("Failed to parse URL", err,
+			logger.NewField("url", c.baseURL),
 		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "erro ao fazer parse da URL")
+		return nil, errors.NewInvalidConfigurationError("mimir", "failed to parse URL")
 	}
 
 	q := u.Query()
@@ -101,59 +101,52 @@ func (c *Client) Query(ctx context.Context, query string) (*types.QueryResult, e
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
-		logger.Error("Erro ao criar requisição", err,
-			logger.NewField("url", u.String()),
-		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "erro ao criar requisição")
+		logger.Error("Failed to create request", err)
+		return nil, errors.NewInvalidConfigurationError("mimir", "failed to create request")
 	}
 
 	req.Header.Set("X-Scope-OrgID", c.config.OrgID)
-	logger.Info("Enviando requisição",
+	logger.Info("Sending request",
 		logger.NewField("url", req.URL.String()),
 		logger.NewField("org_id", c.config.OrgID),
 	)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		logger.Error("Erro ao executar requisição", err,
-			logger.NewField("url", req.URL.String()),
-		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "erro ao executar requisição")
+		logger.Error("Failed to execute request", err)
+		return nil, errors.NewInvalidConfigurationError("mimir", "failed to execute request")
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Error("Erro ao ler resposta", err)
-		return nil, errors.NewInvalidConfigurationError("mimir", "erro ao ler resposta")
+		logger.Error("Failed to read response", err)
+		return nil, errors.NewInvalidConfigurationError("mimir", "failed to read response")
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		logger.Error("Status code inesperado", nil,
+		logger.Error("Unexpected status code", nil,
 			logger.NewField("status_code", resp.StatusCode),
 			logger.NewField("body", string(body)),
 		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "status code inesperado")
+		return nil, errors.NewInvalidConfigurationError("mimir", "unexpected status code")
 	}
 
 	var queryResp QueryResponse
 	if err := json.Unmarshal(body, &queryResp); err != nil {
-		logger.Error("Erro ao fazer unmarshal da resposta", err,
-			logger.NewField("body", string(body)),
-		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "erro ao fazer unmarshal da resposta")
+		logger.Error("Failed to unmarshal response", err)
+		return nil, errors.NewInvalidConfigurationError("mimir", "failed to unmarshal response")
 	}
 
 	if queryResp.Status != "success" {
-		logger.Error("Query falhou", nil,
+		logger.Error("Query failed", nil,
 			logger.NewField("status", queryResp.Status),
-			logger.NewField("body", string(body)),
 		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "query falhou")
+		return nil, errors.NewInvalidConfigurationError("mimir", "query failed")
 	}
 
 	if len(queryResp.Data.Result) == 0 {
-		logger.Info("Nenhum resultado encontrado")
+		logger.Info("No results found")
 		return &types.QueryResult{
 			Value:     0,
 			Timestamp: time.Now(),
@@ -163,39 +156,39 @@ func (c *Client) Query(ctx context.Context, query string) (*types.QueryResult, e
 	// Extrai o valor e timestamp
 	result := queryResp.Data.Result[0]
 	if len(result.Value) != 2 {
-		logger.Error("Formato de valor inesperado", nil,
+		logger.Error("Unexpected value format", nil,
 			logger.NewField("value", result.Value),
 		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "formato de valor inesperado")
+		return nil, errors.NewInvalidConfigurationError("mimir", "unexpected value format")
 	}
 
 	timestamp, ok := result.Value[0].(float64)
 	if !ok {
-		logger.Error("Formato de timestamp inválido", nil,
+		logger.Error("Invalid timestamp format", nil,
 			logger.NewField("timestamp", result.Value[0]),
 		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "formato de timestamp inválido")
+		return nil, errors.NewInvalidConfigurationError("mimir", "invalid timestamp format")
 	}
 
 	value, ok := result.Value[1].(string)
 	if !ok {
-		logger.Error("Formato de valor inválido", nil,
+		logger.Error("Invalid value format", nil,
 			logger.NewField("value", result.Value[1]),
 		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "formato de valor inválido")
+		return nil, errors.NewInvalidConfigurationError("mimir", "invalid value format")
 	}
 
 	floatValue, err := parseValue(value)
 	if err != nil {
-		logger.Error("Erro ao fazer parse do valor", err,
+		logger.Error("Failed to parse value", err,
 			logger.NewField("value", value),
 		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "erro ao fazer parse do valor")
+		return nil, errors.NewInvalidConfigurationError("mimir", "failed to parse value")
 	}
 
-	logger.Info("Query executada com sucesso",
+	logger.Info("Query executed successfully",
+		logger.NewField("query", query),
 		logger.NewField("value", floatValue),
-		logger.NewField("timestamp", time.Unix(int64(timestamp), 0)),
 	)
 
 	return &types.QueryResult{
@@ -206,7 +199,7 @@ func (c *Client) Query(ctx context.Context, query string) (*types.QueryResult, e
 
 // QueryRange executa uma query de intervalo no Mimir
 func (c *Client) QueryRange(ctx context.Context, query string, start, end time.Time, step time.Duration) (*types.QueryRangeResult, error) {
-	logger.Info("Executando query com range",
+	logger.Info("Executing range query",
 		logger.NewField("base_url", c.baseURL),
 		logger.NewField("query", query),
 		logger.NewField("start", start),
@@ -216,10 +209,10 @@ func (c *Client) QueryRange(ctx context.Context, query string, start, end time.T
 
 	u, err := url.Parse(c.baseURL + "/prometheus/api/v1/query_range")
 	if err != nil {
-		logger.Error("Erro ao fazer parse da URL", err,
-			logger.NewField("base_url", c.baseURL),
+		logger.Error("Failed to parse URL", err,
+			logger.NewField("url", c.baseURL),
 		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "erro ao fazer parse da URL")
+		return nil, errors.NewInvalidConfigurationError("mimir", "failed to parse URL")
 	}
 
 	q := u.Query()
@@ -231,59 +224,52 @@ func (c *Client) QueryRange(ctx context.Context, query string, start, end time.T
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
-		logger.Error("Erro ao criar requisição", err,
-			logger.NewField("url", u.String()),
-		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "erro ao criar requisição")
+		logger.Error("Failed to create request", err)
+		return nil, errors.NewInvalidConfigurationError("mimir", "failed to create request")
 	}
 
 	req.Header.Set("X-Scope-OrgID", c.config.OrgID)
-	logger.Info("Enviando requisição",
+	logger.Info("Sending request",
 		logger.NewField("url", req.URL.String()),
 		logger.NewField("org_id", c.config.OrgID),
 	)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		logger.Error("Erro ao executar requisição", err,
-			logger.NewField("url", req.URL.String()),
-		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "erro ao executar requisição")
+		logger.Error("Failed to execute request", err)
+		return nil, errors.NewInvalidConfigurationError("mimir", "failed to execute request")
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Error("Erro ao ler resposta", err)
-		return nil, errors.NewInvalidConfigurationError("mimir", "erro ao ler resposta")
+		logger.Error("Failed to read response", err)
+		return nil, errors.NewInvalidConfigurationError("mimir", "failed to read response")
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		logger.Error("Status code inesperado", nil,
+		logger.Error("Unexpected status code", nil,
 			logger.NewField("status_code", resp.StatusCode),
 			logger.NewField("body", string(body)),
 		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "status code inesperado")
+		return nil, errors.NewInvalidConfigurationError("mimir", "unexpected status code")
 	}
 
 	var queryResp QueryResponse
 	if err := json.Unmarshal(body, &queryResp); err != nil {
-		logger.Error("Erro ao fazer unmarshal da resposta", err,
-			logger.NewField("body", string(body)),
-		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "erro ao fazer unmarshal da resposta")
+		logger.Error("Failed to unmarshal response", err)
+		return nil, errors.NewInvalidConfigurationError("mimir", "failed to unmarshal response")
 	}
 
 	if queryResp.Status != "success" {
-		logger.Error("Query falhou", nil,
+		logger.Error("Query failed", nil,
 			logger.NewField("status", queryResp.Status),
-			logger.NewField("body", string(body)),
 		)
-		return nil, errors.NewInvalidConfigurationError("mimir", "query falhou")
+		return nil, errors.NewInvalidConfigurationError("mimir", "query failed")
 	}
 
 	if len(queryResp.Data.Result) == 0 {
-		logger.Info("Nenhum resultado encontrado")
+		logger.Info("No results found")
 		return &types.QueryRangeResult{
 			Values:    []types.QueryResult{},
 			StartTime: start,
@@ -291,7 +277,7 @@ func (c *Client) QueryRange(ctx context.Context, query string, start, end time.T
 		}, nil
 	}
 
-	logger.Info("Processando resultados",
+	logger.Info("Processing results",
 		logger.NewField("count", len(queryResp.Data.Result)),
 	)
 
@@ -301,7 +287,7 @@ func (c *Client) QueryRange(ctx context.Context, query string, start, end time.T
 
 	for _, v := range result.Values {
 		if len(v) != 2 {
-			logger.Error("Formato de valor inesperado", nil,
+			logger.Error("Unexpected value format", nil,
 				logger.NewField("value", v),
 			)
 			continue
@@ -309,7 +295,7 @@ func (c *Client) QueryRange(ctx context.Context, query string, start, end time.T
 
 		timestamp, ok := v[0].(float64)
 		if !ok {
-			logger.Error("Formato de timestamp inválido", nil,
+			logger.Error("Invalid timestamp format", nil,
 				logger.NewField("timestamp", v[0]),
 			)
 			continue
@@ -317,7 +303,7 @@ func (c *Client) QueryRange(ctx context.Context, query string, start, end time.T
 
 		value, ok := v[1].(string)
 		if !ok {
-			logger.Error("Formato de valor inválido", nil,
+			logger.Error("Invalid value format", nil,
 				logger.NewField("value", v[1]),
 			)
 			continue
@@ -325,7 +311,7 @@ func (c *Client) QueryRange(ctx context.Context, query string, start, end time.T
 
 		floatValue, err := parseValue(value)
 		if err != nil {
-			logger.Error("Erro ao fazer parse do valor", err,
+			logger.Error("Failed to parse value", err,
 				logger.NewField("value", value),
 			)
 			continue
@@ -337,7 +323,7 @@ func (c *Client) QueryRange(ctx context.Context, query string, start, end time.T
 		})
 	}
 
-	logger.Info("Query com range executada com sucesso",
+	logger.Info("Range query executed successfully",
 		logger.NewField("values_count", len(values)),
 	)
 
@@ -350,43 +336,43 @@ func (c *Client) QueryRange(ctx context.Context, query string, start, end time.T
 
 // CheckConnection verifica a conexão com o Mimir
 func (c *Client) CheckConnection(ctx context.Context) error {
-	logger.Info("Verificando conexão com o Mimir",
+	logger.Info("Verifying connection with Mimir",
 		logger.NewField("base_url", c.baseURL),
 	)
 
-	u, err := url.Parse(c.baseURL + "/prometheus/api/v1/status/config")
+	u, err := url.Parse(c.baseURL + "/prometheus/api/v1/query")
 	if err != nil {
-		logger.Error("Erro ao fazer parse da URL", err,
+		logger.Error("Failed to parse URL", err,
 			logger.NewField("base_url", c.baseURL),
 		)
-		return errors.NewInvalidConfigurationError("mimir", "erro ao fazer parse da URL")
+		return errors.NewInvalidConfigurationError("mimir", "failed to parse URL")
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
-		logger.Error("Erro ao criar requisição", err,
+		logger.Error("Failed to create request", err,
 			logger.NewField("url", u.String()),
 		)
-		return errors.NewInvalidConfigurationError("mimir", "erro ao criar requisição")
+		return errors.NewInvalidConfigurationError("mimir", "failed to create request")
 	}
 
 	req.Header.Set("X-Scope-OrgID", c.config.OrgID)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		logger.Error("Erro ao executar requisição", err,
+		logger.Error("Failed to execute request", err,
 			logger.NewField("url", req.URL.String()),
 		)
-		return errors.NewInvalidConfigurationError("mimir", "erro ao executar requisição")
+		return errors.NewInvalidConfigurationError("mimir", "failed to execute request")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		logger.Error("Status code inesperado", nil,
+		logger.Error("Unexpected status code", nil,
 			logger.NewField("status_code", resp.StatusCode),
 		)
-		return errors.NewInvalidConfigurationError("mimir", "status code inesperado")
+		return errors.NewInvalidConfigurationError("mimir", "unexpected status code")
 	}
 
-	logger.Info("Conexão com o Mimir estabelecida com sucesso")
+	logger.Info("Successfully connected to Mimir")
 	return nil
 }

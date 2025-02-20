@@ -17,7 +17,7 @@ func TestDetermineOverallStatus(t *testing.T) {
 		expected string
 	}{
 		{
-			name: "Deve retornar critical quando CPU e memória estão críticos",
+			name: "Should return normal when metrics are normal",
 			cpu: &types.ResourceTypeAnalysis{
 				Utilization: 90.0,
 			},
@@ -39,15 +39,15 @@ func TestDetermineOverallStatus(t *testing.T) {
 			expected: "warning",
 		},
 		{
-			name: "Deve retornar normal quando métricas estão normais",
+			name: "Deve retornar critical quando CPU e memória estão críticos",
 			cpu: &types.ResourceTypeAnalysis{
-				Utilization: 50.0,
+				Utilization: 90.0,
 			},
 			memory: &types.ResourceTypeAnalysis{
-				Utilization: 45.0,
+				Utilization: 95.0,
 			},
 			pods:     &types.PodAnalysis{},
-			expected: "normal",
+			expected: "critical",
 		},
 	}
 

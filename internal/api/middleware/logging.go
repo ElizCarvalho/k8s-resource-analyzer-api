@@ -1,6 +1,6 @@
-// Package middleware fornece middlewares para a API HTTP.
-// Este pacote implementa funcionalidades comuns como logging,
-// autenticação, rate limiting e outras interceptações de requisições.
+// Package middleware provides HTTP middleware for the API.
+// This package implements common functionalities such as logging,
+// authentication, rate limiting and other request interceptions.
 package middleware
 
 import (
@@ -10,19 +10,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RequestLogger é um middleware que loga informações sobre as requisições HTTP
+// RequestLogger is a middleware that logs HTTP request information
 func RequestLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Tempo de início da requisição
+		// Request start time
 		start := time.Now()
 
-		// Processa a requisição
+		// Process request
 		c.Next()
 
-		// Calcula a duração
+		// Calculate duration
 		duration := time.Since(start)
 
-		// Prepara os campos do log
+		// Prepare log fields
 		fields := []logger.Field{
 			logger.NewField("method", c.Request.Method),
 			logger.NewField("path", c.Request.URL.Path),
@@ -32,17 +32,17 @@ func RequestLogger() gin.HandlerFunc {
 			logger.NewField("user_agent", c.Request.UserAgent()),
 		}
 
-		// Adiciona query params se existirem
+		// Add query params if they exist
 		if len(c.Request.URL.RawQuery) > 0 {
 			fields = append(fields, logger.NewField("query", c.Request.URL.RawQuery))
 		}
 
-		// Adiciona erros se existirem
+		// Add errors if they exist
 		if len(c.Errors) > 0 {
 			fields = append(fields, logger.NewField("errors", c.Errors.String()))
 		}
 
-		// Loga a requisição com o nível apropriado
+		// Log request with appropriate level
 		msg := "Request processed"
 		if c.Writer.Status() >= 500 {
 			logger.Error(msg, nil, fields...)
@@ -54,12 +54,12 @@ func RequestLogger() gin.HandlerFunc {
 	}
 }
 
-// ErrorLogger é um middleware que loga erros não tratados
+// ErrorLogger is a middleware that logs unhandled errors
 func ErrorLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
-		// Se houver erros, loga cada um
+		// Log each error if they exist
 		for _, err := range c.Errors {
 			logger.Error("Unhandled error", err.Err,
 				logger.NewField("method", c.Request.Method),
@@ -71,7 +71,7 @@ func ErrorLogger() gin.HandlerFunc {
 	}
 }
 
-// RecoveryLogger é um middleware que recupera de panics e loga o erro
+// RecoveryLogger is a middleware that recovers from panics and logs the error
 func RecoveryLogger() gin.HandlerFunc {
 	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
 		logger.Error("Panic recovered", nil,

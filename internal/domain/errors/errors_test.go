@@ -14,18 +14,18 @@ func TestResourceError_Error(t *testing.T) {
 		want     string
 	}{
 		{
-			name:     "erro com erro interno",
+			name:     "error with internal error",
 			resource: "deployment",
-			message:  "não encontrado",
+			message:  "not found",
 			err:      ErrResourceNotFound,
-			want:     "deployment: não encontrado (recurso não encontrado)",
+			want:     "deployment: not found (resource not found)",
 		},
 		{
-			name:     "erro sem erro interno",
+			name:     "error without internal error",
 			resource: "pod",
-			message:  "configuração inválida",
+			message:  "invalid configuration",
 			err:      nil,
-			want:     "pod: configuração inválida",
+			want:     "pod: invalid configuration",
 		},
 	}
 
@@ -47,7 +47,7 @@ func TestResourceError_Unwrap(t *testing.T) {
 	err := ErrResourceNotFound
 	re := &ResourceError{
 		Resource: "deployment",
-		Message:  "não encontrado",
+		Message:  "not found",
 		Err:      err,
 	}
 
@@ -57,23 +57,23 @@ func TestResourceError_Unwrap(t *testing.T) {
 }
 
 func TestNewResourceNotFoundError(t *testing.T) {
-	got := NewResourceNotFoundError("deployment", "não encontrado")
+	got := NewResourceNotFoundError("deployment", "not found")
 	if !errors.Is(got, ErrResourceNotFound) {
-		t.Error("NewResourceNotFoundError() não retornou um ErrResourceNotFound")
+		t.Error("NewResourceNotFoundError() did not return an ErrResourceNotFound")
 	}
 }
 
 func TestNewInvalidMetricsError(t *testing.T) {
-	got := NewInvalidMetricsError("cpu", "valor inválido")
+	got := NewInvalidMetricsError("cpu", "invalid value")
 	if !errors.Is(got, ErrInvalidMetrics) {
-		t.Error("NewInvalidMetricsError() não retornou um ErrInvalidMetrics")
+		t.Error("NewInvalidMetricsError() did not return an ErrInvalidMetrics")
 	}
 }
 
 func TestNewInvalidConfigurationError(t *testing.T) {
-	got := NewInvalidConfigurationError("mimir", "url inválida")
+	got := NewInvalidConfigurationError("mimir", "invalid url")
 	if !errors.Is(got, ErrInvalidConfiguration) {
-		t.Error("NewInvalidConfigurationError() não retornou um ErrInvalidConfiguration")
+		t.Error("NewInvalidConfigurationError() did not return an ErrInvalidConfiguration")
 	}
 }
 
@@ -85,50 +85,50 @@ func TestErrorChecks(t *testing.T) {
 		wantBool bool
 	}{
 		{
-			name:     "IsResourceNotFound com erro correto",
-			err:      NewResourceNotFoundError("deployment", "não encontrado"),
+			name:     "IsResourceNotFound with correct error",
+			err:      NewResourceNotFoundError("deployment", "not found"),
 			checkFn:  IsResourceNotFound,
 			wantBool: true,
 		},
 		{
-			name:     "IsResourceNotFound com erro diferente",
-			err:      NewInvalidMetricsError("cpu", "valor inválido"),
+			name:     "IsResourceNotFound with different error",
+			err:      NewInvalidMetricsError("cpu", "invalid value"),
 			checkFn:  IsResourceNotFound,
 			wantBool: false,
 		},
 		{
-			name:     "IsInvalidMetrics com erro correto",
-			err:      NewInvalidMetricsError("memory", "valor inválido"),
+			name:     "IsInvalidMetrics with correct error",
+			err:      NewInvalidMetricsError("memory", "invalid value"),
 			checkFn:  IsInvalidMetrics,
 			wantBool: true,
 		},
 		{
-			name:     "IsInvalidMetrics com erro diferente",
-			err:      NewResourceNotFoundError("pod", "não encontrado"),
+			name:     "IsInvalidMetrics with different error",
+			err:      NewResourceNotFoundError("pod", "not found"),
 			checkFn:  IsInvalidMetrics,
 			wantBool: false,
 		},
 		{
-			name:     "IsInvalidConfiguration com erro correto",
-			err:      NewInvalidConfigurationError("mimir", "url inválida"),
+			name:     "IsInvalidConfiguration with correct error",
+			err:      NewInvalidConfigurationError("mimir", "invalid url"),
 			checkFn:  IsInvalidConfiguration,
 			wantBool: true,
 		},
 		{
-			name:     "IsInvalidConfiguration com erro diferente",
-			err:      NewResourceNotFoundError("service", "não encontrado"),
+			name:     "IsInvalidConfiguration with different error",
+			err:      NewResourceNotFoundError("service", "not found"),
 			checkFn:  IsInvalidConfiguration,
 			wantBool: false,
 		},
 		{
-			name:     "IsUnavailableMetrics com erro correto",
+			name:     "IsUnavailableMetrics with correct error",
 			err:      ErrUnavailableMetrics,
 			checkFn:  IsUnavailableMetrics,
 			wantBool: true,
 		},
 		{
-			name:     "IsUnavailableMetrics com erro diferente",
-			err:      NewResourceNotFoundError("deployment", "não encontrado"),
+			name:     "IsUnavailableMetrics with different error",
+			err:      NewResourceNotFoundError("deployment", "not found"),
 			checkFn:  IsUnavailableMetrics,
 			wantBool: false,
 		},

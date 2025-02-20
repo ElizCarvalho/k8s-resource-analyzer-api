@@ -27,9 +27,9 @@ func NewService(metricsCollector collector.Collector, pricingClient *pricing.Cli
 	}
 }
 
-// GetMetrics retorna as métricas atuais e históricas de um deployment
+// GetMetrics retorna métricas atuais e históricas de um deployment
 func (s *Service) GetMetrics(ctx context.Context, namespace, deployment string, period time.Duration) (*types.MetricsResponse, error) {
-	logger.Info("Iniciando coleta de métricas",
+	logger.Info("Starting metrics collection",
 		logger.NewField("namespace", namespace),
 		logger.NewField("deployment", deployment),
 		logger.NewField("period", period),
@@ -114,25 +114,25 @@ func (s *Service) GetMetrics(ctx context.Context, namespace, deployment string, 
 	response.Current.Analysis.CPU.Distribution = make(map[string]float64)
 
 	// Obtém métricas atuais
-	logger.Info("Coletando métricas atuais")
+	logger.Info("Collecting current metrics")
 	k8sMetrics, err := s.metricsCollector.GetDeploymentMetrics(ctx, namespace, deployment)
 	if err != nil {
-		logger.Error("Erro ao obter métricas do deployment", err,
+		logger.Error("Failed to get deployment metrics", err,
 			logger.NewField("namespace", namespace),
 			logger.NewField("deployment", deployment),
 		)
-		return nil, fmt.Errorf("erro ao obter métricas do deployment: %w", err)
+		return nil, fmt.Errorf("failed to get deployment metrics: %w", err)
 	}
 
 	// Obtém configuração do deployment
-	logger.Info("Coletando configuração do deployment")
+	logger.Info("Collecting deployment configuration")
 	config, err := s.metricsCollector.GetDeploymentConfig(ctx, namespace, deployment)
 	if err != nil {
-		logger.Error("Erro ao obter configuração do deployment", err,
+		logger.Error("Failed to get deployment configuration", err,
 			logger.NewField("namespace", namespace),
 			logger.NewField("deployment", deployment),
 		)
-		return nil, fmt.Errorf("erro ao obter configuração do deployment: %w", err)
+		return nil, fmt.Errorf("failed to get deployment configuration: %w", err)
 	}
 
 	// Configura a resposta com os dados atuais
@@ -165,7 +165,7 @@ func (s *Service) GetMetrics(ctx context.Context, namespace, deployment string, 
 	start := end.Add(-period)
 	step := 5 * time.Minute
 
-	logger.Info("Coletando métricas históricas",
+	logger.Info("Collecting historical metrics",
 		logger.NewField("start", start),
 		logger.NewField("end", end),
 		logger.NewField("step", step),
@@ -173,28 +173,30 @@ func (s *Service) GetMetrics(ctx context.Context, namespace, deployment string, 
 
 	// Query para CPU
 	cpuQuery := buildCPUHistoricalQuery(namespace, deployment)
-	logger.Info("Executando query de CPU histórica",
+	logger.Info("Executing CPU historical query",
 		logger.NewField("query", cpuQuery),
 	)
 	cpuResult, err := s.metricsCollector.QueryRange(ctx, cpuQuery, start, end, step)
 	if err != nil {
-		logger.Error("Erro ao obter métricas históricas de CPU", err,
-			logger.NewField("query", cpuQuery),
+		logger.Error("Failed to get historical CPU metrics", err,
+			logger.NewField("namespace", namespace),
+			logger.NewField("deployment", deployment),
 		)
-		return nil, fmt.Errorf("erro ao obter métricas históricas de CPU: %w", err)
+		return nil, fmt.Errorf("failed to get historical CPU metrics: %w", err)
 	}
 
 	// Query para memória
 	memoryQuery := buildMemoryHistoricalQuery(namespace, deployment)
-	logger.Info("Executando query de memória histórica",
+	logger.Info("Executing memory historical query",
 		logger.NewField("query", memoryQuery),
 	)
 	memoryResult, err := s.metricsCollector.QueryRange(ctx, memoryQuery, start, end, step)
 	if err != nil {
-		logger.Error("Erro ao obter métricas históricas de memória", err,
-			logger.NewField("query", memoryQuery),
+		logger.Error("Failed to get historical memory metrics", err,
+			logger.NewField("namespace", namespace),
+			logger.NewField("deployment", deployment),
 		)
-		return nil, fmt.Errorf("erro ao obter métricas históricas de memória: %w", err)
+		return nil, fmt.Errorf("failed to get historical memory metrics: %w", err)
 	}
 
 	// Configura métricas históricas
@@ -236,22 +238,22 @@ func (s *Service) GetMetrics(ctx context.Context, namespace, deployment string, 
 	response.Metadata.Analysis.Confidence.Pods = 100.0
 
 	// Calcula recomendações
-	logger.Info("Calculando recomendações")
+	logger.Info("Calculating recommendations")
 	recommendations := s.CalculateRecommendations(response.Current, response.Historical)
 
 	// Calcula custos
-	logger.Info("Calculando custos")
+	logger.Info("Calculating costs")
 	costs, err := s.CalculateCosts(ctx, response.Current, recommendations)
 	if err != nil {
-		logger.Error("Erro ao calcular custos", err)
-		return nil, errors.NewInvalidMetricsError("costs", "erro ao calcular custos")
+		logger.Error("Failed to calculate costs", err)
+		return nil, errors.NewInvalidMetricsError("costs", "failed to calculate costs")
 	}
 
 	// Atualiza a resposta com as recomendações e custos
 	response.Analysis = recommendations
 	response.Costs = costs
 
-	logger.Info("Análise concluída com sucesso",
+	logger.Info("Analysis completed successfully",
 		logger.NewField("namespace", namespace),
 		logger.NewField("deployment", deployment),
 	)
@@ -261,7 +263,7 @@ func (s *Service) GetMetrics(ctx context.Context, namespace, deployment string, 
 
 // GetTrends retorna as tendências de uso de recursos
 func (s *Service) GetTrends(ctx context.Context, namespace, deployment string, period time.Duration) (*types.TrendsResponse, error) {
-	logger.Info("Iniciando análise de tendências",
+	logger.Info("Starting trend analysis",
 		logger.NewField("namespace", namespace),
 		logger.NewField("deployment", deployment),
 		logger.NewField("period", period),
@@ -270,12 +272,12 @@ func (s *Service) GetTrends(ctx context.Context, namespace, deployment string, p
 	// Obtém métricas
 	metricsResponse, err := s.GetMetrics(ctx, namespace, deployment, period)
 	if err != nil {
-		logger.Error("Erro ao obter métricas para análise de tendências", err)
-		return nil, errors.NewInvalidMetricsError("trends", "erro ao obter métricas para análise de tendências")
+		logger.Error("Failed to get metrics for trend analysis", err)
+		return nil, errors.NewInvalidMetricsError("trends", "failed to get metrics for trend analysis")
 	}
 
 	// Calcula tendências
-	logger.Info("Calculando tendências")
+	logger.Info("Calculating trends")
 	response := &types.TrendsResponse{
 		CPU: &types.TrendMetrics{
 			Trend:      calculateUtilizationTrend(metricsResponse.Historical.CPU),
@@ -294,7 +296,7 @@ func (s *Service) GetTrends(ctx context.Context, namespace, deployment string, p
 		},
 	}
 
-	logger.Info("Análise de tendências concluída",
+	logger.Info("Trend analysis completed",
 		logger.NewField("cpu_trend", response.CPU.Trend),
 		logger.NewField("memory_trend", response.Memory.Trend),
 		logger.NewField("pods_trend", response.Pods.Trend),
@@ -379,13 +381,13 @@ func (s *Service) CalculateCosts(ctx context.Context, current *types.CurrentMetr
 	// Obtém preços atuais
 	prices, err := s.pricingClient.GetCurrentPrices(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao obter preços: %w", err)
+		return nil, fmt.Errorf("failed to get prices: %w", err)
 	}
 
 	// Obtém taxa de câmbio USD -> BRL
 	exchange, err := s.pricingClient.GetExchangeRate(ctx, "USD", "BRL")
 	if err != nil {
-		return nil, fmt.Errorf("erro ao obter taxa de câmbio: %w", err)
+		return nil, fmt.Errorf("failed to get exchange rate: %w", err)
 	}
 
 	// Converte CPU de milicores para cores e memória de Mi para GB

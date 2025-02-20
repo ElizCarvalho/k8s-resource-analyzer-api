@@ -10,22 +10,22 @@ import (
 
 var (
 	// ErrResourceNotFound indica que um recurso não foi encontrado
-	ErrResourceNotFound = errors.New("recurso não encontrado")
+	ErrResourceNotFound = errors.New("resource not found")
 
 	// ErrInvalidMetrics indica que as métricas obtidas são inválidas
-	ErrInvalidMetrics = errors.New("métricas inválidas")
+	ErrInvalidMetrics = errors.New("invalid metrics")
 
-	// ErrInvalidConfiguration indica configuração inválida de recursos
-	ErrInvalidConfiguration = errors.New("configuração inválida")
+	// ErrInvalidConfiguration indica configuração de recurso inválida
+	ErrInvalidConfiguration = errors.New("invalid configuration")
 
 	// ErrUnavailableMetrics indica que as métricas não estão disponíveis
-	ErrUnavailableMetrics = errors.New("métricas indisponíveis")
+	ErrUnavailableMetrics = errors.New("metrics unavailable")
 
 	// ErrInvalidPeriod indica período de análise inválido
-	ErrInvalidPeriod = errors.New("período inválido")
+	ErrInvalidPeriod = errors.New("invalid period")
 )
 
-// ResourceError representa um erro relacionado a recursos Kubernetes
+// ResourceError representa um erro relacionado a recursos do Kubernetes
 type ResourceError struct {
 	Resource string
 	Message  string
@@ -40,12 +40,12 @@ func (e *ResourceError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Resource, e.Message)
 }
 
-// Unwrap retorna o erro interno
+// Unwrap returns the internal error
 func (e *ResourceError) Unwrap() error {
 	return e.Err
 }
 
-// NewResourceNotFoundError cria um novo erro de recurso não encontrado
+// NewResourceNotFoundError creates a new resource not found error
 func NewResourceNotFoundError(resource, message string) error {
 	return &ResourceError{
 		Resource: resource,
@@ -54,7 +54,7 @@ func NewResourceNotFoundError(resource, message string) error {
 	}
 }
 
-// NewInvalidMetricsError cria um novo erro de métricas inválidas
+// NewInvalidMetricsError creates a new invalid metrics error
 func NewInvalidMetricsError(resource, message string) error {
 	return &ResourceError{
 		Resource: resource,
@@ -63,7 +63,7 @@ func NewInvalidMetricsError(resource, message string) error {
 	}
 }
 
-// NewInvalidConfigurationError cria um novo erro de configuração inválida
+// NewInvalidConfigurationError creates a new invalid configuration error
 func NewInvalidConfigurationError(resource, message string) error {
 	return &ResourceError{
 		Resource: resource,
@@ -72,22 +72,22 @@ func NewInvalidConfigurationError(resource, message string) error {
 	}
 }
 
-// IsResourceNotFound verifica se o erro é do tipo ErrResourceNotFound
+// IsResourceNotFound checks if the error is of type ErrResourceNotFound
 func IsResourceNotFound(err error) bool {
 	return errors.Is(err, ErrResourceNotFound)
 }
 
-// IsInvalidMetrics verifica se o erro é do tipo ErrInvalidMetrics
+// IsInvalidMetrics checks if the error is of type ErrInvalidMetrics
 func IsInvalidMetrics(err error) bool {
 	return errors.Is(err, ErrInvalidMetrics)
 }
 
-// IsInvalidConfiguration verifica se o erro é do tipo ErrInvalidConfiguration
+// IsInvalidConfiguration checks if the error is of type ErrInvalidConfiguration
 func IsInvalidConfiguration(err error) bool {
 	return errors.Is(err, ErrInvalidConfiguration)
 }
 
-// IsUnavailableMetrics verifica se o erro é do tipo ErrUnavailableMetrics
+// IsUnavailableMetrics checks if the error is of type ErrUnavailableMetrics
 func IsUnavailableMetrics(err error) bool {
 	return errors.Is(err, ErrUnavailableMetrics)
 }

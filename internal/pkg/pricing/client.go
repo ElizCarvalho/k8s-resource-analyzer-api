@@ -53,9 +53,8 @@ func (c *Client) GetCurrentPrices(ctx context.Context) (*ResourcePrices, error) 
 
 // GetExchangeRate retorna a taxa de câmbio entre duas moedas
 func (c *Client) GetExchangeRate(ctx context.Context, from, to string) (*ExchangeRate, error) {
-	// Por enquanto, retorna taxa fixa USD->BRL
 	if from != "USD" || to != "BRL" {
-		return nil, fmt.Errorf("apenas conversão USD->BRL é suportada")
+		return nil, fmt.Errorf("only USD->BRL conversion is supported")
 	}
 
 	return &ExchangeRate{

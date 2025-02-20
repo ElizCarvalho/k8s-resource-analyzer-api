@@ -20,8 +20,8 @@ func TestSuccess(t *testing.T) {
 		checkResult func(*testing.T, *httptest.ResponseRecorder)
 	}{
 		{
-			name:    "Sucesso com dados",
-			message: "Operação realizada com sucesso",
+			name:    "Success with data",
+			message: "Operation completed successfully",
 			data: map[string]string{
 				"key": "value",
 			},
@@ -32,15 +32,15 @@ func TestSuccess(t *testing.T) {
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
 
-				assert.Equal(t, "Operação realizada com sucesso", response["message"])
+				assert.Equal(t, "Operation completed successfully", response["message"])
 				assert.NotNil(t, response["data"])
 				data := response["data"].(map[string]interface{})
 				assert.Equal(t, "value", data["key"])
 			},
 		},
 		{
-			name:    "Sucesso sem dados",
-			message: "Operação realizada",
+			name:    "Success without data",
+			message: "Operation completed",
 			data:    nil,
 			checkResult: func(t *testing.T, w *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, w.Code)
@@ -49,7 +49,7 @@ func TestSuccess(t *testing.T) {
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
 
-				assert.Equal(t, "Operação realizada", response["message"])
+				assert.Equal(t, "Operation completed", response["message"])
 				assert.Nil(t, response["data"])
 			},
 		},
@@ -77,8 +77,8 @@ func TestSuccessWithRequestID(t *testing.T) {
 		checkResult func(*testing.T, *httptest.ResponseRecorder)
 	}{
 		{
-			name:      "Sucesso com RequestID",
-			message:   "Operação realizada com sucesso",
+			name:      "Success with RequestID",
+			message:   "Operation completed successfully",
 			requestID: "123-456",
 			data: map[string]string{
 				"key": "value",
@@ -90,14 +90,14 @@ func TestSuccessWithRequestID(t *testing.T) {
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
 
-				assert.Equal(t, "Operação realizada com sucesso", response["message"])
+				assert.Equal(t, "Operation completed successfully", response["message"])
 				assert.Equal(t, "123-456", response["request_id"])
 				assert.NotNil(t, response["data"])
 			},
 		},
 		{
-			name:      "Sucesso com RequestID sem dados",
-			message:   "Operação realizada",
+			name:      "Success with RequestID without data",
+			message:   "Operation completed",
 			requestID: "789-012",
 			data:      nil,
 			checkResult: func(t *testing.T, w *httptest.ResponseRecorder) {
@@ -107,7 +107,7 @@ func TestSuccessWithRequestID(t *testing.T) {
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
 
-				assert.Equal(t, "Operação realizada", response["message"])
+				assert.Equal(t, "Operation completed", response["message"])
 				assert.Equal(t, "789-012", response["request_id"])
 				assert.Nil(t, response["data"])
 			},
@@ -135,9 +135,9 @@ func TestError(t *testing.T) {
 		checkResult func(*testing.T, *httptest.ResponseRecorder)
 	}{
 		{
-			name:    "Erro Bad Request",
+			name:    "Bad Request Error",
 			status:  http.StatusBadRequest,
-			message: "Parâmetros inválidos",
+			message: "Invalid parameters",
 			checkResult: func(t *testing.T, w *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusBadRequest, w.Code)
 
@@ -145,13 +145,13 @@ func TestError(t *testing.T) {
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
 
-				assert.Equal(t, "Parâmetros inválidos", response["message"])
+				assert.Equal(t, "Invalid parameters", response["message"])
 			},
 		},
 		{
-			name:    "Erro Internal Server",
+			name:    "Internal Server Error",
 			status:  http.StatusInternalServerError,
-			message: "Erro interno do servidor",
+			message: "Internal server error",
 			checkResult: func(t *testing.T, w *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusInternalServerError, w.Code)
 
@@ -159,7 +159,7 @@ func TestError(t *testing.T) {
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
 
-				assert.Equal(t, "Erro interno do servidor", response["message"])
+				assert.Equal(t, "Internal server error", response["message"])
 			},
 		},
 	}
@@ -186,9 +186,9 @@ func TestErrorWithRequestID(t *testing.T) {
 		checkResult func(*testing.T, *httptest.ResponseRecorder)
 	}{
 		{
-			name:      "Erro com RequestID",
+			name:      "Error with RequestID",
 			status:    http.StatusNotFound,
-			message:   "Recurso não encontrado",
+			message:   "Resource not found",
 			requestID: "123-456",
 			checkResult: func(t *testing.T, w *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusNotFound, w.Code)
@@ -197,7 +197,7 @@ func TestErrorWithRequestID(t *testing.T) {
 				err := json.Unmarshal(w.Body.Bytes(), &response)
 				assert.NoError(t, err)
 
-				assert.Equal(t, "Recurso não encontrado", response["message"])
+				assert.Equal(t, "Resource not found", response["message"])
 				assert.Equal(t, "123-456", response["request_id"])
 			},
 		},

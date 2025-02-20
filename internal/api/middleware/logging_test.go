@@ -22,7 +22,7 @@ func TestRequestLogger(t *testing.T) {
 		setupRouter    func(*gin.Engine)
 	}{
 		{
-			name:           "Sucesso - Request simples",
+			name:           "Success - Simple Request",
 			path:           "/test",
 			method:         http.MethodGet,
 			expectedStatus: http.StatusOK,
@@ -33,17 +33,17 @@ func TestRequestLogger(t *testing.T) {
 			},
 		},
 		{
-			name:           "Erro - Status 404",
-			path:           "/nao-existe",
+			name:           "Error - Status 404",
+			path:           "/not-found",
 			method:         http.MethodGet,
 			expectedStatus: http.StatusNotFound,
 			setupRouter:    func(r *gin.Engine) {},
 		},
 		{
-			name:           "Sucesso - Com query params",
+			name:           "Success - With query params",
 			path:           "/test",
 			method:         http.MethodGet,
-			query:          "param1=valor1&param2=valor2",
+			query:          "param1=value1&param2=value2",
 			expectedStatus: http.StatusOK,
 			setupRouter: func(r *gin.Engine) {
 				r.GET("/test", func(c *gin.Context) {
@@ -84,10 +84,10 @@ func TestErrorLogger(t *testing.T) {
 		expectedError  bool
 	}{
 		{
-			name: "Com erro",
-			path: "/erro",
+			name: "With error",
+			path: "/error",
 			setupRouter: func(r *gin.Engine) {
-				r.GET("/erro", func(c *gin.Context) {
+				r.GET("/error", func(c *gin.Context) {
 					_ = c.Error(assert.AnError)
 					c.Status(http.StatusInternalServerError)
 				})
@@ -96,10 +96,10 @@ func TestErrorLogger(t *testing.T) {
 			expectedError:  true,
 		},
 		{
-			name: "Sem erro",
-			path: "/sucesso",
+			name: "Without error",
+			path: "/success",
 			setupRouter: func(r *gin.Engine) {
-				r.GET("/sucesso", func(c *gin.Context) {
+				r.GET("/success", func(c *gin.Context) {
 					c.Status(http.StatusOK)
 				})
 			},
@@ -134,17 +134,17 @@ func TestRecoveryLogger(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name: "Com panic",
+			name: "With panic",
 			path: "/panic",
 			setupRouter: func(r *gin.Engine) {
 				r.GET("/panic", func(c *gin.Context) {
-					panic("teste de panic")
+					panic("panic test")
 				})
 			},
 			expectedStatus: http.StatusInternalServerError,
 		},
 		{
-			name: "Sem panic",
+			name: "Without panic",
 			path: "/normal",
 			setupRouter: func(r *gin.Engine) {
 				r.GET("/normal", func(c *gin.Context) {

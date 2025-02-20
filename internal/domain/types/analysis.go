@@ -38,13 +38,13 @@ type UtilizationTrend struct {
 	Current     float64      `json:"current"`    // em percentual
 	Historical  float64      `json:"historical"` // em percentual
 	Trend       float64      `json:"trend"`      // variação percentual
-	Pattern     string       `json:"pattern"`    // "increasing", "decreasing", "stable", "fluctuating"
+	Pattern     string       `json:"pattern"`    // "crescente", "decrescente", "estável", "flutuante"
 	Seasonality *Seasonality `json:"seasonality"`
 }
 
 // Seasonality representa informações de sazonalidade
 type Seasonality struct {
-	Pattern string `json:"pattern"` // "daily", "weekly", "monthly", "none"
+	Pattern string `json:"pattern"` // "diário", "semanal", "mensal", "nenhum"
 	Period  string `json:"period"`  // duração do ciclo (ex: "24h", "7d", "30d")
 }
 
@@ -52,5 +52,5 @@ type Seasonality struct {
 type Recommendation struct {
 	Current   float64 `json:"current"`   // em milicores para CPU, Mi para memória
 	Suggested float64 `json:"suggested"` // em milicores para CPU, Mi para memória
-	Reason    string  `json:"reason"`    // "overprovisioned", "underprovisioned", "optimal"
+	Reason    string  `json:"reason"`    // "superprovisionado", "subprovisionado", "ótimo"
 }

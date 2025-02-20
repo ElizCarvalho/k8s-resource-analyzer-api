@@ -126,13 +126,12 @@ func LoadConfig() (*Config, error) {
 }
 
 func (c *Config) validate() error {
-	// Validações básicas
 	if c.Server.Port == "" {
-		return errors.NewInvalidConfigurationError("port", "PORT é obrigatório")
+		return errors.NewInvalidConfigurationError("port", "PORT is required")
 	}
 
 	if c.Mimir.URL == "" {
-		return errors.NewInvalidConfigurationError("mimir_url", "MIMIR_URL é obrigatório")
+		return errors.NewInvalidConfigurationError("mimir_url", "MIMIR_URL is required")
 	}
 
 	return nil
