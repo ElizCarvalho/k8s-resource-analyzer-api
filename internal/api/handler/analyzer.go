@@ -1,11 +1,15 @@
+// Package handler implementa os handlers HTTP da API.
+// Este pacote é responsável por receber as requisições HTTP,
+// validar os inputs, chamar os serviços apropriados e formatar as respostas.
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/domain/errors"
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/domain/resource/analyzer"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,8 +33,13 @@ type GetMetricsRequest struct {
 
 // AnalyzeResources analisa os recursos de um deployment
 func (h *AnalyzerHandler) AnalyzeResources(c *gin.Context) {
+	// Extrai e valida parâmetros
 	var req GetMetricsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
+		logger.Error("Parâmetros inválidos", err,
+			logger.NewField("namespace", req.Namespace),
+			logger.NewField("period", req.Period),
+		)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Parâmetros inválidos: " + err.Error(),
 		})
@@ -39,68 +48,92 @@ func (h *AnalyzerHandler) AnalyzeResources(c *gin.Context) {
 
 	deployment := c.Param("deployment")
 	if deployment == "" {
+		err := errors.NewInvalidConfigurationError("deployment", "nome não especificado")
+		logger.Error("Deployment não especificado", err)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Deployment não especificado",
+			"error": err.Error(),
 		})
 		return
 	}
 
-	fmt.Printf("Requisição recebida: namespace=%s, deployment=%s, period=%s\n", req.Namespace, deployment, req.Period)
+	logger.Info("Requisição recebida",
+		logger.NewField("namespace", req.Namespace),
+		logger.NewField("deployment", deployment),
+		logger.NewField("period", req.Period),
+	)
 
 	// Converte o período para time.Duration
 	period, err := time.ParseDuration(req.Period)
 	if err != nil {
+		err = errors.NewInvalidConfigurationError("period", "período inválido")
+		logger.Error("Período inválido", err,
+			logger.NewField("period", req.Period),
+			logger.NewField("error", err.Error()),
+		)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Período inválido: " + err.Error(),
+			"error": err.Error(),
 		})
 		return
 	}
 
 	// Obtém métricas
-	fmt.Printf("Obtendo métricas para %s/%s (período: %s)...\n", req.Namespace, deployment, period)
+	logger.Info("Obtendo métricas",
+		logger.NewField("namespace", req.Namespace),
+		logger.NewField("deployment", deployment),
+		logger.NewField("period", period),
+	)
+
 	metricsResponse, err := h.resourceAnalyzer.GetMetrics(c.Request.Context(), req.Namespace, deployment, period)
 	if err != nil {
-		fmt.Printf("Erro ao obter métricas: %v\n", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erro ao obter métricas: " + err.Error(),
+		logger.Error("Erro ao obter métricas", err,
+			logger.NewField("namespace", req.Namespace),
+			logger.NewField("deployment", deployment),
+		)
+		status := http.StatusInternalServerError
+		if errors.IsResourceNotFound(err) {
+			status = http.StatusNotFound
+		}
+		c.JSON(status, gin.H{
+			"error": err.Error(),
 		})
 		return
 	}
-	fmt.Printf("Métricas obtidas com sucesso\n")
 
 	// Obtém tendências
-	fmt.Printf("Obtendo tendências...\n")
+	logger.Info("Obtendo tendências")
 	trendsResponse, err := h.resourceAnalyzer.GetTrends(c.Request.Context(), req.Namespace, deployment, period)
 	if err != nil {
-		fmt.Printf("Erro ao obter tendências: %v\n", err)
+		logger.Error("Erro ao obter tendências", err,
+			logger.NewField("namespace", req.Namespace),
+			logger.NewField("deployment", deployment),
+		)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erro ao obter tendências: " + err.Error(),
+			"error": err.Error(),
 		})
 		return
 	}
-	fmt.Printf("Tendências obtidas com sucesso\n")
 
 	// Analisa recursos
-	fmt.Printf("Analisando recursos...\n")
+	logger.Info("Analisando recursos")
 	resourceAnalysis := h.resourceAnalyzer.AnalyzeResources(metricsResponse.Current, metricsResponse.Historical)
-	fmt.Printf("Análise de recursos concluída\n")
 
 	// Calcula custos
-	fmt.Printf("Calculando custos...\n")
+	logger.Info("Calculando custos")
 	costAnalysis, err := h.resourceAnalyzer.CalculateCosts(c.Request.Context(), metricsResponse.Current, metricsResponse.Analysis)
 	if err != nil {
-		fmt.Printf("Erro ao calcular custos: %v\n", err)
+		logger.Error("Erro ao calcular custos", err,
+			logger.NewField("namespace", req.Namespace),
+			logger.NewField("deployment", deployment),
+		)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Erro ao calcular custos: " + err.Error(),
+			"error": err.Error(),
 		})
 		return
 	}
-	fmt.Printf("Custos calculados com sucesso\n")
 
 	// Gera alertas
-	fmt.Printf("Gerando alertas...\n")
+	logger.Info("Gerando alertas")
 	alerts := h.resourceAnalyzer.GenerateAlerts(metricsResponse.Current, metricsResponse.Historical)
-	fmt.Printf("Alertas gerados com sucesso\n")
 
 	// Monta a resposta
 	response := gin.H{
@@ -113,6 +146,11 @@ func (h *AnalyzerHandler) AnalyzeResources(c *gin.Context) {
 		"alerts":     alerts,
 	}
 
-	fmt.Printf("Enviando resposta...\n")
+	logger.Info("Enviando resposta",
+		logger.NewField("namespace", req.Namespace),
+		logger.NewField("deployment", deployment),
+		logger.NewField("alerts_count", len(alerts)),
+	)
+
 	c.JSON(http.StatusOK, response)
 }

@@ -1,107 +1,135 @@
+// Package logger fornece funcionalidades de logging estruturado.
+// Este pacote implementa um wrapper sobre o zerolog para fornecer
+// logs estruturados com níveis, campos contextuais e formatação consistente.
 package logger
 
 import (
 	"context"
-	"log/slog"
+	"io"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
-var globalLogger zerolog.Logger
+var (
+	// defaultLogger é a instância padrão do logger
+	defaultLogger zerolog.Logger
+)
 
-type contextKey string
-
-const loggerKey = contextKey("logger")
-
-// CustomLogger é uma interface para logging
-type CustomLogger interface {
-	Info(msg string, args ...interface{})
-	Error(msg string, args ...interface{})
-	With(args ...interface{}) CustomLogger
+// Config contém as configurações do logger
+type Config struct {
+	// Level define o nível mínimo de log
+	Level string
+	// Pretty indica se deve usar formatação legível
+	Pretty bool
+	// Output define o writer de saída
+	Output io.Writer
 }
 
-type slogWrapper struct {
-	logger *slog.Logger
+// Field representa um campo de log estruturado
+type Field struct {
+	Key   string
+	Value interface{}
 }
 
-func (s *slogWrapper) Info(msg string, args ...interface{}) {
-	s.logger.Info(msg, args...)
-}
-
-func (s *slogWrapper) Error(msg string, args ...interface{}) {
-	s.logger.Error(msg, args...)
-}
-
-func (s *slogWrapper) With(args ...interface{}) CustomLogger {
-	return &slogWrapper{logger: s.logger.With(args...)}
-}
-
-// NewLogger cria uma nova instância do logger
-func NewLogger() CustomLogger {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	return &slogWrapper{logger: logger}
-}
-
-// FromContext retorna o logger do contexto
-func FromContext(ctx context.Context) CustomLogger {
-	if logger, ok := ctx.Value(loggerKey).(CustomLogger); ok {
-		return logger
-	}
-	return NewLogger()
-}
-
-// WithContext adiciona o logger ao contexto
-func WithContext(ctx context.Context, logger CustomLogger) context.Context {
-	return context.WithValue(ctx, loggerKey, logger)
-}
-
-func Setup() {
-	level := getLogLevel()
-
-	if strings.ToLower(os.Getenv("LOG_FORMAT")) == "json" {
-		globalLogger = log.Output(os.Stdout).Level(level)
-	} else {
-		output := zerolog.ConsoleWriter{
-			Out:        os.Stdout,
-			TimeFormat: time.RFC3339,
-			NoColor:    false,
+// Setup inicializa o logger com as configurações fornecidas
+func Setup(cfg *Config) {
+	if cfg == nil {
+		cfg = &Config{
+			Level:  "info",
+			Pretty: true,
+			Output: os.Stdout,
 		}
-		globalLogger = log.Output(output).Level(level)
 	}
 
-	globalLogger = globalLogger.With().
-		Str("app", "k8s-resource-analyzer").
-		Str("env", os.Getenv("GIN_MODE")).
-		Logger()
-}
-
-func getLogLevel() zerolog.Level {
-	switch strings.ToLower(os.Getenv("LOG_LEVEL")) {
-	case "debug":
-		return zerolog.DebugLevel
-	case "info":
-		return zerolog.InfoLevel
-	case "warn":
-		return zerolog.WarnLevel
-	case "error":
-		return zerolog.ErrorLevel
-	default:
-		return zerolog.InfoLevel
+	// Configura o nível de log
+	level, err := zerolog.ParseLevel(cfg.Level)
+	if err != nil {
+		level = zerolog.InfoLevel
 	}
+	zerolog.SetGlobalLevel(level)
+
+	// Configura o writer
+	var w io.Writer = cfg.Output
+	if cfg.Pretty {
+		w = zerolog.ConsoleWriter{
+			Out:        cfg.Output,
+			TimeFormat: time.RFC3339,
+		}
+	}
+
+	// Cria o logger
+	defaultLogger = zerolog.New(w).With().Timestamp().Logger()
 }
 
-func Info() *zerolog.Event {
-	return globalLogger.Info()
+// WithContext retorna um logger com campos do contexto
+func WithContext(ctx context.Context) *zerolog.Logger {
+	return &defaultLogger
 }
 
-func Error() *zerolog.Event {
-	return globalLogger.Error()
+// WithFields adiciona campos ao logger
+func WithFields(fields ...Field) *zerolog.Logger {
+	ctx := defaultLogger.With()
+	for _, f := range fields {
+		ctx = ctx.Interface(f.Key, f.Value)
+	}
+	logger := ctx.Logger()
+	return &logger
 }
 
-func Fatal() *zerolog.Event {
-	return globalLogger.Fatal()
+// Debug loga uma mensagem no nível debug
+func Debug(msg string, fields ...Field) {
+	event := defaultLogger.Debug()
+	for _, f := range fields {
+		event = event.Interface(f.Key, f.Value)
+	}
+	event.Msg(msg)
+}
+
+// Info loga uma mensagem no nível info
+func Info(msg string, fields ...Field) {
+	event := defaultLogger.Info()
+	for _, f := range fields {
+		event = event.Interface(f.Key, f.Value)
+	}
+	event.Msg(msg)
+}
+
+// Warn loga uma mensagem no nível warn
+func Warn(msg string, fields ...Field) {
+	event := defaultLogger.Warn()
+	for _, f := range fields {
+		event = event.Interface(f.Key, f.Value)
+	}
+	event.Msg(msg)
+}
+
+// Error loga uma mensagem no nível error
+func Error(msg string, err error, fields ...Field) {
+	event := defaultLogger.Error()
+	if err != nil {
+		event = event.Err(err)
+	}
+	for _, f := range fields {
+		event = event.Interface(f.Key, f.Value)
+	}
+	event.Msg(msg)
+}
+
+// Fatal loga uma mensagem no nível fatal e encerra o programa
+func Fatal(msg string, err error, fields ...Field) {
+	event := defaultLogger.Fatal()
+	if err != nil {
+		event = event.Err(err)
+	}
+	for _, f := range fields {
+		event = event.Interface(f.Key, f.Value)
+	}
+	event.Msg(msg)
+}
+
+// NewField cria um novo campo de log
+func NewField(key string, value interface{}) Field {
+	return Field{Key: key, Value: value}
 }

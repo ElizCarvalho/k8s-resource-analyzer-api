@@ -1,13 +1,13 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/domain/errors"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/logger"
 	"github.com/joho/godotenv"
-	"github.com/rs/zerolog/log"
 )
 
 // Config contém todas as configurações da aplicação
@@ -70,10 +70,12 @@ func LoadConfig() (*Config, error) {
 	if err := godotenv.Load(envFile); err != nil {
 		// Se não encontrar, tenta carregar o .env padrão
 		if err := godotenv.Load(); err != nil {
-			log.Warn().Msg("Arquivo .env não encontrado. Usando variáveis de ambiente do sistema.")
+			logger.Warn("Arquivo .env não encontrado. Usando variáveis de ambiente do sistema.")
 		}
 	} else {
-		log.Info().Str("file", envFile).Msg("Configurações carregadas do arquivo")
+		logger.Info("Configurações carregadas do arquivo",
+			logger.NewField("file", envFile),
+		)
 	}
 
 	config := &Config{
@@ -126,25 +128,25 @@ func LoadConfig() (*Config, error) {
 func (c *Config) validate() error {
 	// Validações básicas
 	if c.Server.Port == "" {
-		return fmt.Errorf("PORT é obrigatório")
+		return errors.NewInvalidConfigurationError("port", "PORT é obrigatório")
 	}
 
 	if c.Mimir.URL == "" {
-		return fmt.Errorf("MIMIR_URL é obrigatório")
+		return errors.NewInvalidConfigurationError("mimir_url", "MIMIR_URL é obrigatório")
 	}
 
 	return nil
 }
 
 func (c *Config) logConfig() {
-	log.Info().
-		Str("port", c.Server.Port).
-		Str("gin_mode", c.Server.GinMode).
-		Str("log_level", c.Logging.Level).
-		Str("log_format", c.Logging.Format).
-		Str("mimir_url", c.Mimir.URL).
-		Bool("in_cluster", c.K8s.InCluster).
-		Msg("Configurações carregadas")
+	logger.Info("Configurações carregadas",
+		logger.NewField("port", c.Server.Port),
+		logger.NewField("gin_mode", c.Server.GinMode),
+		logger.NewField("log_level", c.Logging.Level),
+		logger.NewField("log_format", c.Logging.Format),
+		logger.NewField("mimir_url", c.Mimir.URL),
+		logger.NewField("in_cluster", c.K8s.InCluster),
+	)
 }
 
 // Funções auxiliares

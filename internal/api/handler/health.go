@@ -74,17 +74,13 @@ func NewHealthHandler(k8sClient K8sClient, mimirClient MimirClient) *HealthHandl
 func (h *HealthHandler) Check(c *gin.Context) {
 	requestID := uuid.New().String()
 
-	// Cria um novo logger com o request ID
-	log := logger.NewLogger().With("request_id", requestID)
-
-	// Adiciona o logger ao contexto
-	ctx := logger.WithContext(c.Request.Context(), log)
-	c.Request = c.Request.WithContext(ctx)
-
-	log.Info("iniciando health check")
+	// Loga usando o logger padrão com o request ID
+	logger.Info("iniciando health check",
+		logger.NewField("request_id", requestID),
+	)
 
 	// Verifica as dependências
-	dependencies := h.checkDependencies(ctx)
+	dependencies := h.checkDependencies(c.Request.Context())
 
 	// Determina o status geral baseado nas dependências
 	status := "healthy"
@@ -109,7 +105,7 @@ func (h *HealthHandler) Check(c *gin.Context) {
 		Dependencies: dependencies,
 	}
 
-	log.Info("health check concluído com sucesso")
+	logger.Info("health check concluído com sucesso")
 	response.SuccessWithRequestID(c, "API funcionando normalmente", healthResponse, requestID)
 }
 

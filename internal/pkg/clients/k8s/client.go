@@ -2,10 +2,11 @@ package k8s
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/domain/errors"
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/domain/types"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -43,28 +44,40 @@ func NewClient(cfg *ClientConfig) (*Client, error) {
 	var config *rest.Config
 	var err error
 
+	logger.Info("Criando cliente Kubernetes",
+		logger.NewField("in_cluster", cfg.InCluster),
+		logger.NewField("kubeconfig_path", cfg.KubeconfigPath),
+	)
+
 	if cfg.InCluster {
 		config, err = rest.InClusterConfig()
 		if err != nil {
-			return nil, fmt.Errorf("erro ao criar configuração in-cluster: %w", err)
+			logger.Error("Erro ao criar configuração in-cluster", err)
+			return nil, errors.NewInvalidConfigurationError("kubernetes", "erro ao criar configuração in-cluster")
 		}
 	} else {
 		config, err = clientcmd.BuildConfigFromFlags("", cfg.KubeconfigPath)
 		if err != nil {
-			return nil, fmt.Errorf("erro ao criar configuração a partir do kubeconfig: %w", err)
+			logger.Error("Erro ao criar configuração a partir do kubeconfig", err,
+				logger.NewField("kubeconfig_path", cfg.KubeconfigPath),
+			)
+			return nil, errors.NewInvalidConfigurationError("kubernetes", "erro ao criar configuração a partir do kubeconfig")
 		}
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao criar clientset: %w", err)
+		logger.Error("Erro ao criar clientset", err)
+		return nil, errors.NewInvalidConfigurationError("kubernetes", "erro ao criar clientset")
 	}
 
 	metricsClient, err := metricsv1beta1.NewForConfig(config)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao criar metrics client: %w", err)
+		logger.Error("Erro ao criar metrics client", err)
+		return nil, errors.NewInvalidConfigurationError("kubernetes", "erro ao criar metrics client")
 	}
 
+	logger.Info("Cliente Kubernetes criado com sucesso")
 	return &Client{
 		clientset:     clientset,
 		metricsClient: metricsClient,
@@ -73,28 +86,43 @@ func NewClient(cfg *ClientConfig) (*Client, error) {
 
 // GetDeploymentMetrics retorna as métricas atuais de um deployment
 func (c *Client) GetDeploymentMetrics(ctx context.Context, namespace, name string) (*types.K8sMetrics, error) {
-	fmt.Printf("Obtendo métricas para deployment %s no namespace %s\n", name, namespace)
+	logger.Info("Obtendo métricas do deployment",
+		logger.NewField("namespace", namespace),
+		logger.NewField("deployment", name),
+	)
 
 	// Obtém os pods do deployment
 	deployment, err := c.clientset.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		fmt.Printf("Erro ao obter deployment: %v\n", err)
-		return nil, fmt.Errorf("erro ao obter deployment: %w", err)
+		logger.Error("Erro ao obter deployment", err,
+			logger.NewField("namespace", namespace),
+			logger.NewField("deployment", name),
+		)
+		return nil, errors.NewResourceNotFoundError("deployment", "erro ao obter deployment")
 	}
-	fmt.Printf("Deployment encontrado: %s\n", deployment.Name)
+	logger.Info("Deployment encontrado",
+		logger.NewField("name", deployment.Name),
+	)
 
 	// Obtém os pods usando o selector do deployment
 	selector := deployment.Spec.Selector.MatchLabels
-	fmt.Printf("Usando selector: %v\n", selector)
+	logger.Info("Listando pods",
+		logger.NewField("selector", selector),
+	)
 
 	pods, err := c.clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: selector}),
 	})
 	if err != nil {
-		fmt.Printf("Erro ao listar pods: %v\n", err)
-		return nil, fmt.Errorf("erro ao listar pods: %w", err)
+		logger.Error("Erro ao listar pods", err,
+			logger.NewField("namespace", namespace),
+			logger.NewField("selector", selector),
+		)
+		return nil, errors.NewResourceNotFoundError("pods", "erro ao listar pods")
 	}
-	fmt.Printf("Encontrados %d pods\n", len(pods.Items))
+	logger.Info("Pods encontrados",
+		logger.NewField("count", len(pods.Items)),
+	)
 
 	// Inicializa as métricas
 	result := &types.K8sMetrics{
@@ -120,7 +148,10 @@ func (c *Client) GetDeploymentMetrics(ctx context.Context, namespace, name strin
 
 	// Coleta métricas de cada pod
 	for _, pod := range pods.Items {
-		fmt.Printf("Verificando pod %s (status: %s)\n", pod.Name, pod.Status.Phase)
+		logger.Info("Verificando pod",
+			logger.NewField("name", pod.Name),
+			logger.NewField("status", pod.Status.Phase),
+		)
 		if pod.Status.Phase != "Running" {
 			continue
 		}
@@ -129,17 +160,25 @@ func (c *Client) GetDeploymentMetrics(ctx context.Context, namespace, name strin
 		// Obtém métricas do pod
 		podMetrics, err := c.metricsClient.MetricsV1beta1().PodMetricses(namespace).Get(ctx, pod.Name, metav1.GetOptions{})
 		if err != nil {
-			fmt.Printf("Erro ao obter métricas do pod %s: %v\n", pod.Name, err)
+			logger.Error("Erro ao obter métricas do pod", err,
+				logger.NewField("pod", pod.Name),
+			)
 			continue
 		}
-		fmt.Printf("Métricas obtidas para o pod %s\n", pod.Name)
+		logger.Info("Métricas obtidas para o pod",
+			logger.NewField("pod", pod.Name),
+		)
 
 		// Soma métricas de todos os containers do pod
 		for _, container := range podMetrics.Containers {
 			cpuUsage := float64(container.Usage.Cpu().MilliValue())                  // Já está em milicores
 			memoryUsage := float64(container.Usage.Memory().Value()) / (1024 * 1024) // Converte para Mi
 
-			fmt.Printf("Container %s: CPU=%.3f milicores, Memory=%.3f Mi\n", container.Name, cpuUsage, memoryUsage)
+			logger.Info("Métricas do container",
+				logger.NewField("container", container.Name),
+				logger.NewField("cpu_usage", cpuUsage),
+				logger.NewField("memory_usage", memoryUsage),
+			)
 
 			totalCPUUsage += cpuUsage
 			totalMemoryUsage += memoryUsage
@@ -153,40 +192,61 @@ func (c *Client) GetDeploymentMetrics(ctx context.Context, namespace, name strin
 		}
 	}
 
-	// Calcula médias
+	// Calcula médias e utilização
 	if runningPods > 0 {
+		result.CPU.Usage = totalCPUUsage
 		result.CPU.Average = totalCPUUsage / float64(runningPods)
 		result.CPU.Peak = peakCPUUsage
-		result.CPU.Usage = totalCPUUsage
+		result.CPU.Utilization = totalCPUUsage / float64(deployment.Status.Replicas) * 100
 
+		result.Memory.Usage = totalMemoryUsage
 		result.Memory.Average = totalMemoryUsage / float64(runningPods)
 		result.Memory.Peak = peakMemoryUsage
-		result.Memory.Usage = totalMemoryUsage
+		result.Memory.Utilization = totalMemoryUsage / float64(deployment.Status.Replicas) * 100
 
-		fmt.Printf("Métricas calculadas:\n")
-		fmt.Printf("CPU: Average=%.3f, Peak=%.3f, Total=%.3f\n", result.CPU.Average, result.CPU.Peak, result.CPU.Usage)
-		fmt.Printf("Memory: Average=%.3f, Peak=%.3f, Total=%.3f\n", result.Memory.Average, result.Memory.Peak, result.Memory.Usage)
+		result.Pods.Running = runningPods
+		result.Pods.Utilization = float64(runningPods) / float64(deployment.Status.Replicas) * 100
 	}
 
-	result.Pods.Running = runningPods
-	fmt.Printf("Total de pods em execução: %d\n", runningPods)
+	logger.Info("Métricas coletadas com sucesso",
+		logger.NewField("cpu_usage", result.CPU.Usage),
+		logger.NewField("memory_usage", result.Memory.Usage),
+		logger.NewField("running_pods", result.Pods.Running),
+	)
 
 	return result, nil
 }
 
 // GetDeploymentConfig retorna a configuração de um deployment
 func (c *Client) GetDeploymentConfig(ctx context.Context, namespace, name string) (*types.K8sDeploymentConfig, error) {
+	logger.Info("Obtendo configuração do deployment",
+		logger.NewField("namespace", namespace),
+		logger.NewField("deployment", name),
+	)
+
 	// Obtém o deployment
 	deployment, err := c.clientset.AppsV1().Deployments(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("erro ao obter deployment: %w", err)
+		logger.Error("Erro ao obter deployment", err,
+			logger.NewField("namespace", namespace),
+			logger.NewField("deployment", name),
+		)
+		return nil, errors.NewResourceNotFoundError("deployment", "erro ao obter deployment")
 	}
 
 	// Obtém o HPA, se existir
 	hpa, err := c.clientset.AutoscalingV2().HorizontalPodAutoscalers(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		// Ignora erro se HPA não existir
+		logger.Info("HPA não encontrado",
+			logger.NewField("namespace", namespace),
+			logger.NewField("deployment", name),
+		)
 		hpa = nil
+	} else {
+		logger.Info("HPA encontrado",
+			logger.NewField("namespace", namespace),
+			logger.NewField("deployment", name),
+		)
 	}
 
 	result := &types.K8sDeploymentConfig{}
@@ -210,6 +270,13 @@ func (c *Client) GetDeploymentConfig(ctx context.Context, namespace, name string
 		if memory := container.Resources.Limits.Memory(); memory != nil {
 			result.Memory.Limit = float64(memory.Value()) / (1024 * 1024) // Converte bytes para Mi
 		}
+
+		logger.Info("Recursos do container",
+			logger.NewField("cpu_request", result.CPU.Request),
+			logger.NewField("cpu_limit", result.CPU.Limit),
+			logger.NewField("memory_request", result.Memory.Request),
+			logger.NewField("memory_limit", result.Memory.Limit),
+		)
 	}
 
 	// Configuração de pods
@@ -224,14 +291,23 @@ func (c *Client) GetDeploymentConfig(ctx context.Context, namespace, name string
 		result.Pods.MaxReplicas = result.Pods.Replicas
 	}
 
+	logger.Info("Configuração de pods",
+		logger.NewField("replicas", result.Pods.Replicas),
+		logger.NewField("min_replicas", result.Pods.MinReplicas),
+		logger.NewField("max_replicas", result.Pods.MaxReplicas),
+	)
+
 	return result, nil
 }
 
 // CheckConnection verifica a conexão com o cluster Kubernetes
 func (c *Client) CheckConnection(ctx context.Context) error {
+	logger.Info("Verificando conexão com o cluster Kubernetes")
 	_, err := c.clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return fmt.Errorf("erro ao conectar ao cluster: %w", err)
+		logger.Error("Erro ao conectar ao cluster", err)
+		return errors.NewInvalidConfigurationError("kubernetes", "erro ao conectar ao cluster")
 	}
+	logger.Info("Conexão com o cluster estabelecida com sucesso")
 	return nil
 }
