@@ -2,16 +2,13 @@ package pricing
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 )
 
-// Client é o cliente para obter preços e taxas de câmbio
+// Client é o cliente para obter informações de preços
 type Client struct {
-	httpClient *http.Client
-	config     *Config
+	config *Config
 }
 
 // Config contém as configurações do cliente
@@ -20,73 +17,51 @@ type Config struct {
 	Timeout     time.Duration
 }
 
-// ResourcePricing contém os preços dos recursos
-type ResourcePricing struct {
-	CPU    float64 // Preço por vCPU/hora
-	Memory float64 // Preço por GB/hora
-}
-
-// ExchangeRate contém a taxa de câmbio
-type ExchangeRate struct {
-	Rate      float64
-	Timestamp time.Time
-}
-
-// NewClient cria um novo cliente
-func NewClient(cfg *Config) *Client {
-	if cfg.Timeout == 0 {
-		cfg.Timeout = 10 * time.Second
+// ResourcePrices representa preços dos recursos
+type ResourcePrices struct {
+	CPU struct {
+		PerCore float64
 	}
+	Memory struct {
+		PerGB float64
+	}
+}
 
+// ExchangeRate representa taxa de câmbio
+type ExchangeRate struct {
+	Rate         float64
+	FromCurrency string
+	ToCurrency   string
+	UpdatedAt    string
+}
+
+// NewClient cria uma nova instância do cliente
+func NewClient(cfg *Config) *Client {
 	return &Client{
-		httpClient: &http.Client{
-			Timeout: cfg.Timeout,
-		},
 		config: cfg,
 	}
 }
 
-// GetResourcePricing obtém os preços dos recursos do GCP
-func (c *Client) GetResourcePricing(ctx context.Context) (*ResourcePricing, error) {
-	// Valores baseados no GCP (região us-central1, E2 standard)
-	return &ResourcePricing{
-		CPU:    0.021811, // $0.021811 por vCPU/hora
-		Memory: 0.002923, // $0.002923 por GB/hora
-	}, nil
+// GetCurrentPrices retorna os preços atuais dos recursos
+func (c *Client) GetCurrentPrices(ctx context.Context) (*ResourcePrices, error) {
+	// Por enquanto, retorna preços fixos baseados no GCP
+	prices := &ResourcePrices{}
+	prices.CPU.PerCore = 0.005425  // USD por core/hora
+	prices.Memory.PerGB = 0.000729 // USD por GB/hora
+	return prices, nil
 }
 
-// GetExchangeRate obtém a taxa de câmbio USD/BRL
-func (c *Client) GetExchangeRate(ctx context.Context) (*ExchangeRate, error) {
-	url := fmt.Sprintf("%s/latest?base=USD&symbols=BRL", c.config.ExchangeURL)
-
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao criar request: %w", err)
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("erro ao obter taxa de câmbio: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("erro ao obter taxa de câmbio: status %d", resp.StatusCode)
-	}
-
-	var result struct {
-		Rates struct {
-			BRL float64 `json:"BRL"`
-		} `json:"rates"`
-		Timestamp int64 `json:"timestamp"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("erro ao decodificar resposta: %w", err)
+// GetExchangeRate retorna a taxa de câmbio entre duas moedas
+func (c *Client) GetExchangeRate(ctx context.Context, from, to string) (*ExchangeRate, error) {
+	// Por enquanto, retorna taxa fixa USD->BRL
+	if from != "USD" || to != "BRL" {
+		return nil, fmt.Errorf("apenas conversão USD->BRL é suportada")
 	}
 
 	return &ExchangeRate{
-		Rate:      result.Rates.BRL,
-		Timestamp: time.Unix(result.Timestamp, 0),
+		Rate:         5.78,
+		FromCurrency: from,
+		ToCurrency:   to,
+		UpdatedAt:    time.Now().Format(time.RFC3339),
 	}, nil
 }
