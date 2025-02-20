@@ -5,27 +5,26 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/domain/metrics"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/domain/resource/analyzer"
 	"github.com/gin-gonic/gin"
 )
 
 // AnalyzerHandler é o handler para análise de recursos
 type AnalyzerHandler struct {
-	metricsService metrics.MetricsProvider
+	resourceAnalyzer analyzer.ResourceAnalyzer
 }
 
 // NewAnalyzerHandler cria uma nova instância do AnalyzerHandler
-func NewAnalyzerHandler(metricsService metrics.MetricsProvider) *AnalyzerHandler {
+func NewAnalyzerHandler(resourceAnalyzer analyzer.ResourceAnalyzer) *AnalyzerHandler {
 	return &AnalyzerHandler{
-		metricsService: metricsService,
+		resourceAnalyzer: resourceAnalyzer,
 	}
 }
 
 // GetMetricsRequest representa o request para obter métricas
 type GetMetricsRequest struct {
-	Namespace  string `form:"namespace" binding:"required"`
-	Deployment string `form:"deployment" binding:"required"`
-	Period     string `form:"period" binding:"required"`
+	Namespace string `form:"namespace" binding:"required"`
+	Period    string `form:"period" binding:"required"`
 }
 
 // AnalyzeResources analisa os recursos de um deployment
@@ -38,7 +37,15 @@ func (h *AnalyzerHandler) AnalyzeResources(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("Requisição recebida: namespace=%s, deployment=%s, period=%s\n", req.Namespace, req.Deployment, req.Period)
+	deployment := c.Param("deployment")
+	if deployment == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Deployment não especificado",
+		})
+		return
+	}
+
+	fmt.Printf("Requisição recebida: namespace=%s, deployment=%s, period=%s\n", req.Namespace, deployment, req.Period)
 
 	// Converte o período para time.Duration
 	period, err := time.ParseDuration(req.Period)
@@ -50,8 +57,8 @@ func (h *AnalyzerHandler) AnalyzeResources(c *gin.Context) {
 	}
 
 	// Obtém métricas
-	fmt.Printf("Obtendo métricas para %s/%s (período: %s)...\n", req.Namespace, req.Deployment, period)
-	metricsResponse, err := h.metricsService.GetMetrics(c.Request.Context(), req.Namespace, req.Deployment, period)
+	fmt.Printf("Obtendo métricas para %s/%s (período: %s)...\n", req.Namespace, deployment, period)
+	metricsResponse, err := h.resourceAnalyzer.GetMetrics(c.Request.Context(), req.Namespace, deployment, period)
 	if err != nil {
 		fmt.Printf("Erro ao obter métricas: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -63,7 +70,7 @@ func (h *AnalyzerHandler) AnalyzeResources(c *gin.Context) {
 
 	// Obtém tendências
 	fmt.Printf("Obtendo tendências...\n")
-	trendsResponse, err := h.metricsService.GetTrends(c.Request.Context(), req.Namespace, req.Deployment, period)
+	trendsResponse, err := h.resourceAnalyzer.GetTrends(c.Request.Context(), req.Namespace, deployment, period)
 	if err != nil {
 		fmt.Printf("Erro ao obter tendências: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -75,12 +82,12 @@ func (h *AnalyzerHandler) AnalyzeResources(c *gin.Context) {
 
 	// Analisa recursos
 	fmt.Printf("Analisando recursos...\n")
-	resourceAnalysis := h.metricsService.AnalyzeResources(metricsResponse.Current, metricsResponse.Historical)
+	resourceAnalysis := h.resourceAnalyzer.AnalyzeResources(metricsResponse.Current, metricsResponse.Historical)
 	fmt.Printf("Análise de recursos concluída\n")
 
 	// Calcula custos
 	fmt.Printf("Calculando custos...\n")
-	costAnalysis, err := h.metricsService.CalculateCosts(c.Request.Context(), metricsResponse.Current, resourceAnalysis)
+	costAnalysis, err := h.resourceAnalyzer.CalculateCosts(c.Request.Context(), metricsResponse.Current, metricsResponse.Analysis)
 	if err != nil {
 		fmt.Printf("Erro ao calcular custos: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -92,7 +99,7 @@ func (h *AnalyzerHandler) AnalyzeResources(c *gin.Context) {
 
 	// Gera alertas
 	fmt.Printf("Gerando alertas...\n")
-	alerts := h.metricsService.GenerateAlerts(metricsResponse.Current, metricsResponse.Historical)
+	alerts := h.resourceAnalyzer.GenerateAlerts(metricsResponse.Current, metricsResponse.Historical)
 	fmt.Printf("Alertas gerados com sucesso\n")
 
 	// Monta a resposta

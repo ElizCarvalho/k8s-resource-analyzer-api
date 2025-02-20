@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/api/routes"
-	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/domain/metrics"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/domain/resource/analyzer"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/domain/resource/collector"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/clients/k8s"
+	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/clients/mimir"
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/config"
-	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/k8s"
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/logger"
-	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/mimir"
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/pricing"
 	"github.com/gin-gonic/gin"
 )
@@ -71,14 +72,17 @@ func main() {
 	// Configura o modo do Gin
 	gin.SetMode(cfg.Server.GinMode)
 
-	// Cria o serviço de métricas
-	metricsService := metrics.NewService(k8sClient, mimirClient, pricingClient)
+	// Cria o coletor de métricas
+	metricsCollector := collector.NewK8sMimirCollector(k8sClient, mimirClient)
+
+	// Cria o serviço de análise
+	analyzerService := analyzer.NewService(metricsCollector, pricingClient)
 
 	// Configura o router
 	router := gin.Default()
 
 	// Configura as rotas
-	routes.SetupRoutes(router, k8sClient, mimirClient, metricsService)
+	routes.SetupRoutes(router, k8sClient, mimirClient, analyzerService)
 
 	// Configura o servidor
 	srv := &http.Server{
