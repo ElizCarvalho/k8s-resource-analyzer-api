@@ -88,7 +88,7 @@ func TestErrorLogger(t *testing.T) {
 			path: "/erro",
 			setupRouter: func(r *gin.Engine) {
 				r.GET("/erro", func(c *gin.Context) {
-					c.Error(assert.AnError)
+					_ = c.Error(assert.AnError)
 					c.Status(http.StatusInternalServerError)
 				})
 			},
