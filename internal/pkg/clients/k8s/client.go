@@ -97,7 +97,24 @@ func (c *Client) GetDeploymentMetrics(ctx context.Context, namespace, name strin
 	fmt.Printf("Encontrados %d pods\n", len(pods.Items))
 
 	// Inicializa as métricas
-	result := &types.K8sMetrics{}
+	result := &types.K8sMetrics{
+		CPU: struct {
+			Usage       float64 `json:"usage"`
+			Average     float64 `json:"average"`
+			Peak        float64 `json:"peak"`
+			Utilization float64 `json:"utilization"`
+		}{},
+		Memory: struct {
+			Usage       float64 `json:"usage"`
+			Average     float64 `json:"average"`
+			Peak        float64 `json:"peak"`
+			Utilization float64 `json:"utilization"`
+		}{},
+		Pods: struct {
+			Running     int     `json:"running"`
+			Utilization float64 `json:"utilization"`
+		}{},
+	}
 	var totalCPUUsage, peakCPUUsage, totalMemoryUsage, peakMemoryUsage float64
 	runningPods := 0
 
@@ -119,10 +136,10 @@ func (c *Client) GetDeploymentMetrics(ctx context.Context, namespace, name strin
 
 		// Soma métricas de todos os containers do pod
 		for _, container := range podMetrics.Containers {
-			cpuUsage := float64(container.Usage.Cpu().MilliValue()) / 1000
-			memoryUsage := float64(container.Usage.Memory().Value()) / (1024 * 1024 * 1024) // Converte para GB
+			cpuUsage := float64(container.Usage.Cpu().MilliValue())                  // Já está em milicores
+			memoryUsage := float64(container.Usage.Memory().Value()) / (1024 * 1024) // Converte para Mi
 
-			fmt.Printf("Container %s: CPU=%.3f cores, Memory=%.3f GB\n", container.Name, cpuUsage, memoryUsage)
+			fmt.Printf("Container %s: CPU=%.3f milicores, Memory=%.3f Mi\n", container.Name, cpuUsage, memoryUsage)
 
 			totalCPUUsage += cpuUsage
 			totalMemoryUsage += memoryUsage
@@ -180,18 +197,18 @@ func (c *Client) GetDeploymentConfig(ctx context.Context, namespace, name string
 
 		// CPU
 		if cpu := container.Resources.Requests.Cpu(); cpu != nil {
-			result.CPU.Request = float64(cpu.MilliValue()) / 1000
+			result.CPU.Request = float64(cpu.MilliValue()) // Já está em milicores
 		}
 		if cpu := container.Resources.Limits.Cpu(); cpu != nil {
-			result.CPU.Limit = float64(cpu.MilliValue()) / 1000
+			result.CPU.Limit = float64(cpu.MilliValue()) // Já está em milicores
 		}
 
 		// Memória
 		if memory := container.Resources.Requests.Memory(); memory != nil {
-			result.Memory.Request = float64(memory.Value()) / (1024 * 1024 * 1024) // Converte para GB
+			result.Memory.Request = float64(memory.Value()) / (1024 * 1024) // Converte bytes para Mi
 		}
 		if memory := container.Resources.Limits.Memory(); memory != nil {
-			result.Memory.Limit = float64(memory.Value()) / (1024 * 1024 * 1024) // Converte para GB
+			result.Memory.Limit = float64(memory.Value()) / (1024 * 1024) // Converte bytes para Mi
 		}
 	}
 
