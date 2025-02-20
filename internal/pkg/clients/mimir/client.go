@@ -7,8 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os/exec"
-	"strconv"
 	"time"
 
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/domain/errors"
@@ -16,21 +14,19 @@ import (
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/logger"
 )
 
-// Client é o cliente para interagir com o Mimir
+// Client é o cliente para o Mimir
 type Client struct {
 	baseURL    string
 	httpClient *http.Client
 	config     *ClientConfig
 }
 
-// ClientConfig contém as configurações para o cliente Mimir
+// ClientConfig contém as configurações do cliente
 type ClientConfig struct {
 	BaseURL     string
 	Timeout     time.Duration
 	ServiceName string
 	Namespace   string
-	LocalPort   string
-	ServicePort string
 	OrgID       string
 }
 
@@ -46,26 +42,6 @@ type QueryResponse struct {
 		} `json:"result"`
 	} `json:"data"`
 }
-
-// Constantes para validação
-var (
-	// Lista branca de serviços permitidos
-	allowedServices = map[string]bool{
-		"lgtm-mimir-query-frontend": true,
-		"mimir-query-frontend":      true,
-		"mimir":                     true,
-	}
-
-	// Lista branca de namespaces permitidos
-	allowedNamespaces = map[string]bool{
-		"monitoring":    true,
-		"observability": true,
-	}
-
-	// Portas permitidas
-	minPort = 1024
-	maxPort = 65535
-)
 
 // NewClient cria uma nova instância do cliente Mimir
 func NewClient(cfg *ClientConfig) *Client {
@@ -412,69 +388,5 @@ func (c *Client) CheckConnection(ctx context.Context) error {
 	}
 
 	logger.Info("Conexão com o Mimir estabelecida com sucesso")
-	return nil
-}
-
-func (c *Client) setupPortForward(ctx context.Context) error {
-	// Validação dos inputs
-	if err := validatePortForwardInputs(c.config); err != nil {
-		return fmt.Errorf("inputs inválidos para port-forward: %w", err)
-	}
-
-	// Tenta estabelecer port-forward com valores validados e seguros
-	// #nosec G204 -- Inputs são validados contra uma lista branca de valores permitidos
-	cmd := exec.CommandContext(ctx, "kubectl", "port-forward",
-		fmt.Sprintf("svc/%s", c.config.ServiceName),
-		"-n", c.config.Namespace,
-		fmt.Sprintf("%s:%s", c.config.LocalPort, c.config.ServicePort))
-
-	// Executa o comando
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("erro ao iniciar port-forward: %w", err)
-	}
-
-	// Aguarda um pouco para o port-forward estabelecer
-	time.Sleep(2 * time.Second)
-
-	// Verifica se a conexão foi estabelecida
-	healthURL := fmt.Sprintf("http://localhost:%s/ready", c.config.LocalPort)
-	req, err := http.NewRequestWithContext(ctx, "GET", healthURL, nil)
-	if err != nil {
-		return fmt.Errorf("erro ao criar request de verificação: %w", err)
-	}
-
-	// Verifica novamente a conexão
-	resp, err := c.httpClient.Do(req)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("erro: não foi possível estabelecer conexão com o Mimir")
-	}
-
-	return nil
-}
-
-// validatePortForwardInputs valida os inputs para o port-forward
-func validatePortForwardInputs(cfg *ClientConfig) error {
-	// Valida ServiceName usando lista branca
-	if !allowedServices[cfg.ServiceName] {
-		return fmt.Errorf("serviço não permitido: %s", cfg.ServiceName)
-	}
-
-	// Valida Namespace usando lista branca
-	if !allowedNamespaces[cfg.Namespace] {
-		return fmt.Errorf("namespace não permitido: %s", cfg.Namespace)
-	}
-
-	// Valida LocalPort
-	localPort, err := strconv.Atoi(cfg.LocalPort)
-	if err != nil || localPort < minPort || localPort > maxPort {
-		return fmt.Errorf("porta local inválida: deve estar entre %d e %d", minPort, maxPort)
-	}
-
-	// Valida ServicePort
-	servicePort, err := strconv.Atoi(cfg.ServicePort)
-	if err != nil || servicePort < minPort || servicePort > maxPort {
-		return fmt.Errorf("porta do serviço inválida: deve estar entre %d e %d", minPort, maxPort)
-	}
-
 	return nil
 }

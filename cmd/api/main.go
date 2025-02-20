@@ -1,8 +1,9 @@
+// Package main é o ponto de entrada da aplicação.
+// Responsável por inicializar e configurar todos os componentes da API.
 package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,6 +18,7 @@ import (
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/config"
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/logger"
 	"github.com/ElizCarvalho/k8s-resource-analyzer-api/internal/pkg/pricing"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -38,11 +40,19 @@ func main() {
 	// Carrega as configurações
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("Erro ao carregar configurações: %v", err)
+		logger.Fatal("Erro ao carregar configurações", err)
 	}
 
 	// Configura o logger
-	logger.Setup()
+	logConfig := &logger.Config{
+		Level:  cfg.Logging.Level,
+		Pretty: cfg.Logging.Format == "pretty",
+		Output: os.Stdout,
+	}
+	logger.Setup(logConfig)
+
+	// Configura o modo do Gin
+	gin.SetMode(cfg.Server.GinMode)
 
 	// Configura o cliente Kubernetes
 	k8sClient, err := k8s.NewClient(&k8s.ClientConfig{
@@ -50,7 +60,7 @@ func main() {
 		InCluster:      cfg.K8s.InCluster,
 	})
 	if err != nil {
-		log.Fatalf("Erro ao criar cliente Kubernetes: %v", err)
+		logger.Fatal("Erro ao criar cliente Kubernetes", err)
 	}
 
 	// Configura o cliente Mimir
@@ -58,8 +68,6 @@ func main() {
 		BaseURL:     cfg.Mimir.URL,
 		ServiceName: cfg.Mimir.ServiceName,
 		Namespace:   cfg.Mimir.Namespace,
-		LocalPort:   cfg.Mimir.LocalPort,
-		ServicePort: cfg.Mimir.ServicePort,
 		OrgID:       cfg.Mimir.OrgID,
 	})
 
@@ -69,9 +77,6 @@ func main() {
 		Timeout:     cfg.Pricing.Timeout,
 	})
 
-	// Configura o modo do Gin
-	gin.SetMode(cfg.Server.GinMode)
-
 	// Cria o coletor de métricas
 	metricsCollector := collector.NewK8sMimirCollector(k8sClient, mimirClient)
 
@@ -79,7 +84,7 @@ func main() {
 	analyzerService := analyzer.NewService(metricsCollector, pricingClient)
 
 	// Configura o router
-	router := gin.Default()
+	router := gin.New() // Usa gin.New() ao invés de gin.Default() para configurar middlewares manualmente
 
 	// Configura as rotas
 	routes.SetupRoutes(router, k8sClient, mimirClient, analyzerService)
@@ -97,8 +102,12 @@ func main() {
 
 	// Inicia o servidor em uma goroutine
 	go func() {
+		logger.Info("Iniciando servidor",
+			logger.NewField("port", cfg.Server.Port),
+			logger.NewField("mode", cfg.Server.GinMode),
+		)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Erro ao iniciar servidor: %v", err)
+			logger.Fatal("Erro ao iniciar servidor", err)
 		}
 	}()
 
@@ -106,16 +115,16 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("Desligando servidor...")
+	logger.Info("Desligando servidor...")
 
-	// Contexto com timeout para shutdown
+	// Configura o contexto com timeout para shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Tenta desligar o servidor graciosamente
+	// Tenta fazer o shutdown gracefully
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Erro ao desligar servidor: %v", err)
+		logger.Fatal("Erro ao desligar servidor", err)
 	}
 
-	log.Println("Servidor desligado com sucesso")
+	logger.Info("Servidor desligado com sucesso")
 }

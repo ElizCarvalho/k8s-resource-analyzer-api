@@ -1,0 +1,150 @@
+=== Análise de Recursos: travelernotifierbyevent-7cb945c95d 2025-02-19 23:18:24 ===
+
+⚙️ 1. Configuração Atual do Deployment:
+CPU Request: 1024m
+CPU Limit: 1024m
+Memory Request: 
+Memory Limit: 700Mi
+
+HPA Configuração:
+Min Replicas: 5
+Max Replicas: 10
+Target CPU: 60%
+
+👥 2. Análise Atual dos Pods:
+Top 10 pods por CPU:
+NAME                                       CPU(cores)   MEMORY(bytes)   
+travelernotifierbyevent-7cb945c95d-hzhsw   74m          177Mi           
+travelernotifierbyevent-7cb945c95d-xrbvt   71m          184Mi           
+travelernotifierbyevent-7cb945c95d-ssqmp   64m          176Mi           
+travelernotifierbyevent-7cb945c95d-qg447   63m          190Mi           
+travelernotifierbyevent-7cb945c95d-jrkfk   61m          179Mi           
+
+📊 3. Distribuição de CPU:
+Faixa       | Pods | % do Total
+-----------+------+----------
+0-200m     |   5 | 100.0%
+201-400m   |   0 |   0.0%
+401-600m   |   0 |   0.0%
+601-800m   |   0 |   0.0%
+801-1000m  |   0 |   0.0%
+
+🚨 4. Alertas e Situação Atual:
+- Pods em 100% CPU (>=999m): 0
+- Pods >900m CPU: 0
+- Pods >800Mi RAM: 0
+
+📈 5. Média e Pico de Uso:
+CPU:
+- Média: 69,0m
+- Pico: 80m
+RAM:
+- Média: 181,2Mi
+- Pico: 190Mi
+
+🔍 6. Análise e Recomendações:
+Análise de CPU:
+- CPU Request Atual: 1024m
+- Uso Médio Atual: 69,0m (0.0%)
+- Pico Atual: 80m (0.0%)
+- Média Histórica: 41m
+- Pico Histórico: 64m
+💡 Oportunidade de Otimização:
+- O request atual (1024m) está muito acima do valor recomendado (96m)
+- Recomendação: Ajustar CPU request para 96m baseado no uso real
+
+Análise de Memória:
+- Memory Request/Limit Atual: 700Mi
+- Uso Médio Atual: 181,2Mi (20.0%)
+- Pico Atual: 190Mi (20.0%)
+- Média Histórica: 121Mi
+- Pico Histórico: 192Mi
+💡 Oportunidade de Otimização:
+- O valor atual (700Mi) está muito acima do valor recomendado (230Mi)
+- Recomendação: Ajustar Memory request/limit para 230Mi baseado no uso real
+
+Análise de HPA:
+- Réplicas Atuais: 5
+- Configuração: min=5, max=10, target CPU=60%
+
+Métricas Históricas do HPA:
+Pods:
+- Média histórica: 5 pods
+- Pico histórico: 5 pods
+Utilização de CPU:
+- Média histórica: 7%
+- Pico histórico: 8%
+💡 Oportunidade: Reduzir minReplicas
+- Valor atual: 5
+- Valor recomendado: 2
+- O valor atual está muito alto considerando que:
+  * A utilização média de CPU é apenas 7%
+  * O serviço nunca precisou mais que 5 pods
+  * 2 pods são suficientes para manter alta disponibilidade
+
+Recomendações para o HPA:
+💡 Oportunidade: Reduzir maxReplicas
+- Valor atual: 10
+- Valor recomendado: 7 (baseado no histórico de uso)
+- O valor atual está muito acima do necessário, pois o pico histórico foi de apenas 5 pods
+✅ Target CPU está adequado
+
+💰 7. Análise de Custos:
+Custos Atuais (estimativa mensal):
+- Configuração:
+  * CPU: 1024m (1.024 cores)
+  * Memória: 700Mi (.683GB)
+  * Réplicas: 5
+- Custo Total: $21.79/mês (R$125.93/mês)
+
+Custos Estimados com Recomendações:
+- Configuração Recomendada:
+  * CPU: 96m (.096 cores)
+  * Memória: 230Mi (.224GB)
+  * Réplicas: 2
+- Custo Total Estimado: $0.98/mês (R$5.68/mês)
+- Diferença de Custo: $-20.80/mês (R$-120.25/mês) (-90.0%)
+
+📊 8. Análise de Tendências (90 dias):
+Tendência de CPU:
+📉 Redução de 0% no uso de CPU
+Tendência de Memória:
+📉 Redução de 0% no uso de memória
+Tendência de Pods:
+📉 Redução de 0% no número de pods
+
+🔮 10. Projeção de Crescimento:
+
+💡 Conclusão:
+📢 Existem oportunidades de otimização nos recursos alocados.
+🎯 Implementando as recomendações acima, você pode:
+💰 Reduzir custos em R$120.25/mês (-90.0%)
+🚀 Manter a performance adequada com recursos otimizados
+
+Análise de Métricas:
+- Período de análise: 30 dias
+
+=== METADADOS DA ANÁLISE ===
+
+FONTES DE DADOS:
+- Mimir (métricas históricas de CPU, memória e pods)
+- Kubernetes API (configurações atuais e estado dos pods)
+
+PERÍODO ANALISADO:
+- Janela de análise: 30 dias
+- Janela de tendências: 90 dias
+
+MÉTRICAS COLETADAS:
+- CPU: container_cpu_usage_seconds_total
+- Memória: container_memory_working_set_bytes
+- Pods: kube_deployment_status_replicas
+
+CONFIABILIDADE:
+- Dados de CPU: 100% das amostras disponíveis
+- Dados de Memória: 100% das amostras disponíveis
+- Dados de Pods: 100% das amostras disponíveis
+
+TIMESTAMP:
+- Data da análise: 2025-02-19 23:18:47 -03
+- Cluster: gke_hu-cloud-189316_us-east1-b_production
+- Deployment: travelernotifierbyevent-7cb945c95d
